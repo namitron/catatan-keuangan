@@ -362,7 +362,13 @@
         // Menghapus transaksi dari database Firebase
         function deleteTransaction(transaction) {
             const transactionRef = ref(database, `transactions/${transaction.key}`);
-            remove(transactionRef); // Menghapus transaksi dengan key
+            remove(transactionRef) // Menghapus transaksi dengan key
+                .then(() => {
+                    console.log('Transaksi berhasil dihapus:', transaction.key);
+                })
+                .catch((error) => {
+                    console.error('Gagal menghapus transaksi:', error);
+                });
         }
 
         // Fungsi untuk mengunduh data sebagai file Excel
