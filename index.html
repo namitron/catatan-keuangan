@@ -144,7 +144,7 @@
             const currentDate = new Date();
             const currentYear = currentDate.getFullYear();
             const currentMonth = currentDate.getMonth() + 1; // Bulan dimulai dari 0
-            const currentWeek = Math.ceil((currentDate.getDate() + currentDate.getDay() + 1) / 7); // Hitung minggu dalam bulan
+            const currentWeek = 2; // Set default minggu ke minggu kedua
 
             // Populate year
             for (let i = currentYear - 5; i <= currentYear; i++) {
@@ -169,14 +169,13 @@
             monthSelect.value = currentMonth; // Set default bulan ke bulan saat ini
 
             // Populate week
-            const currentWeekNumber = Math.ceil(currentDate.getDate() / 7); // Menghitung minggu saat ini
             for (let i = 1; i <= 52; i++) {
                 const option = document.createElement('option');
                 option.value = i;
                 option.textContent = `Minggu ${i}`;
                 weekSelect.appendChild(option);
             }
-            weekSelect.value = currentWeekNumber; // Set default minggu ke minggu saat ini
+            weekSelect.value = currentWeek; // Set default minggu ke minggu kedua
         }
 
         // Chart.js setup
