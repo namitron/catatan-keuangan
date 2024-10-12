@@ -109,12 +109,13 @@
 
         // Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyCThcGVbqaOSvDhWARk0-4Icqxt95vuVgY",
-            authDomain: "catatan-67be8.firebaseapp.com",
-            projectId: "catatan-67be8",
-            storageBucket: "catatan-67be8.appspot.com",
-            messagingSenderId: "481382304833",
-            appId: "1:481382304833:web:4004daa9d8d4daed440ac0"
+            apiKey: "AIzaSyBCKzM7sv0rfxIgiTvdehUq8uL_ad9_u-4",
+            authDomain: "catatan-b9f7c.firebaseapp.com",
+            databaseURL: "https://catatan-b9f7c-default-rtdb.firebaseio.com",
+            projectId: "catatan-b9f7c",
+            storageBucket: "catatan-b9f7c.appspot.com",
+            messagingSenderId: "1012027038485",
+            appId: "1:1012027038485:web:efe4484f7fb222742de71c"
         };
 
         // Initialize Firebase
@@ -229,134 +230,4 @@
                     {
                         label: 'Saldo',
                         data: balanceData,
-                        borderColor: 'blue',
-                        fill: false,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Tanggal',
-                        },
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Jumlah (Rp)',
-                        },
-                    },
-                },
-            },
-        });
-
-        // Fungsi untuk menambah transaksi
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-
-            const description = document.getElementById('description').value;
-            const amount = Number(document.getElementById('amount').value);
-            const type = document.getElementById('type').value;
-
-            const transaction = {
-                description: description,
-                amount: amount,
-                type: type,
-                time: new Date().toISOString(),
-            };
-
-            push(ref(database, 'transactions'), transaction);
-            form.reset();
-        });
-
-        // Listen for changes in Firebase database
-        onValue(ref(database, 'transactions'), (snapshot) => {
-            transactions = [];
-            snapshot.forEach((childSnapshot) => {
-                const transaction = childSnapshot.val();
-                transaction.id = childSnapshot.key; // Menyimpan ID transaksi
-                transactions.push(transaction);
-            });
-
-            // Jika tidak ada transaksi, inisialisasi nilai default
-            if (transactions.length === 0) {
-                initializeDefaultValues();
-            } else {
-                updateTable(); // Update tabel jika ada transaksi
-            }
-        });
-
-        // Fungsi untuk memperbarui tabel
-        function updateTable() {
-            // Kosongkan tabel sebelum diisi
-            transactionTable.innerHTML = '';
-
-            let incomeTotal = 0;
-            let expenseTotal = 0;
-            let balance = 0;
-
-            transactions.forEach(transaction => {
-                const row = transactionTable.insertRow();
-                row.insertCell(0).textContent = transaction.description;
-                row.insertCell(1).textContent = `Rp ${transaction.amount}`;
-                row.insertCell(2).textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
-                row.insertCell(3).textContent = new Date(transaction.time).toLocaleString();
-                balance += (transaction.type === 'income' ? transaction.amount : -transaction.amount);
-                row.insertCell(4).textContent = `Rp ${balance}`;
-                row.insertCell(5).innerHTML = '<button class="delete-button">Hapus</button>';
-            });
-
-            incomeTotalDisplay.textContent = `Rp ${incomeTotal}`;
-            expenseTotalDisplay.textContent = `Rp ${expenseTotal}`;
-            balanceDisplay.textContent = `Rp ${balance}`;
-
-            // Update grafik
-            updateChart();
-        }
-
-        // Fungsi untuk memperbarui grafik
-        function updateChart() {
-            labels.length = 0;
-            incomeData.length = 0;
-            expenseData.length = [];
-            balanceData.length = [];
-
-            let balance = 0;
-
-            transactions.forEach(transaction => {
-                const date = new Date(transaction.time);
-                const label = date.toLocaleDateString(); // Menggunakan tanggal sebagai label
-                if (!labels.includes(label)) {
-                    labels.push(label);
-                }
-                if (transaction.type === 'income') {
-                    incomeData.push(transaction.amount);
-                    expenseData.push(0);
-                } else {
-                    incomeData.push(0);
-                    expenseData.push(transaction.amount);
-                }
-                balance += (transaction.type === 'income' ? transaction.amount : -transaction.amount);
-                balanceData.push(balance);
-            });
-
-            myChart.update(); // Memperbarui grafik
-        }
-
-        // Event listener untuk tombol unduh
-        downloadButton.addEventListener('click', () => {
-            const workbook = XLSX.utils.book_new();
-            const worksheet = XLSX.utils.table_to_sheet(transactionTable);
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Transaksi");
-            XLSX.writeFile(workbook, "catatan_keuangan.xlsx");
-        });
-
-        // Populate year, month, and week selectors on page load
-        populateDateSelectors();
-        initializeDefaultValues(); // Inisialisasi tampilan default saat halaman dimuat
-    </script>
-</body>
-</html>
+           
