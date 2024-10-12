@@ -6,6 +6,7 @@
     <title>Catatan Keuangan</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Menambahkan Chart.js -->
     <style>
         /* Tambahkan gaya untuk tombol */
         #download-button {
@@ -21,6 +22,12 @@
 
         #download-button:hover {
             background-color: #45a049; /* Warna hijau lebih gelap saat hover */
+        }
+
+        /* Gaya untuk grafik */
+        #chart-container {
+            width: 50%; /* Lebar grafik */
+            margin: auto;
         }
     </style>
 </head>
@@ -44,7 +51,7 @@
                     <th>Deskripsi</th>
                     <th>Jumlah</th>
                     <th>Tipe</th>
-                    <th>Waktu</th> <!-- Kolom waktu ditambahkan -->
+                    <th>Waktu</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -59,8 +66,12 @@
             <p>Saldo: <span id="balance">Rp 0</span></p>
         </div>
 
-        <!-- Tombol untuk mengunduh Excel -->
         <button id="download-button">Unduh Excel</button>
+        
+        <!-- Menambahkan container untuk grafik -->
+        <div id="chart-container">
+            <canvas id="myChart"></canvas>
+        </div>
     </div>
 
     <!-- Firebase Scripts -->
@@ -92,20 +103,75 @@
         const downloadButton = document.getElementById('download-button');
 
         let transactions = [];
+        const labels = []; // Untuk label waktu
+        const incomeData = []; // Untuk data pemasukan
+        const expenseData = []; // Untuk data pengeluaran
+
+        // Chart.js setup
+        const ctx = document.getElementById('myChart').getContext('2d');
+        const myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Pemasukan',
+                    data: incomeData,
+                    borderColor: 'green',
+                    fill: false
+                }, {
+                    label: 'Pengeluaran',
+                    data: expenseData,
+                    borderColor: 'red',
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
 
         // Listen for transactions in Firebase
         onValue(ref(database, 'transactions'), (snapshot) => {
             const data = snapshot.val();
             transactions = [];
             transactionTable.innerHTML = '';
+            labels.length = 0; // Mengosongkan labels
+            incomeData.length = 0; // Mengosongkan data pemasukan
+            expenseData.length = 0; // Mengosongkan data pengeluaran
 
             for (let key in data) {
                 const transaction = data[key];
                 transactions.push({ ...transaction, id: key });
                 displayTransaction({ ...transaction, id: key });
+                
+                const date = new Date(transaction.timestamp);
+                const formattedDate = date.toLocaleString('id-ID', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+
+                // Menambahkan label dan data ke grafik
+                if (transaction.type === 'income') {
+                    labels.push(formattedDate);
+                    incomeData.push(transaction.amount);
+                    expenseData.push(0); // Tambahkan 0 untuk pengeluaran
+                } else {
+                    labels.push(formattedDate);
+                    incomeData.push(0); // Tambahkan 0 untuk pemasukan
+                    expenseData.push(transaction.amount);
+                }
             }
 
             updateSummary();
+            myChart.update(); // Memperbarui grafik
         });
 
         // Add new transaction
