@@ -6,7 +6,7 @@
     <title>Catatan Keuangan</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Menambahkan Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Gaya untuk body dan canvas */
         body, html {
@@ -36,7 +36,7 @@
 
         /* Gaya untuk grafik */
         #chart-container {
-            width: 90%; /* Lebar grafik */
+            width: 100%; /* Lebar grafik mengikuti kontainer */
             margin: auto;
             padding-top: 20px; /* Menambahkan jarak di atas grafik */
             height: 400px; /* Tinggi container grafik */
@@ -148,6 +148,7 @@
           }
 
           updateSummary();
+          updateChart(); // Memperbarui grafik setelah data transaksi diambil
       });
 
       // Add new transaction
