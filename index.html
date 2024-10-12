@@ -270,9 +270,14 @@
             const month = document.getElementById('month').value;
             const week = document.getElementById('week').value;
 
-            // Menghitung pemasukan, pengeluaran, dan saldo untuk grafik selama satu minggu
+            // Menghitung tanggal awal dan akhir untuk minggu pertama
             const startDate = new Date(year, month - 1, 1 + (week - 1) * 7); // Hari pertama minggu
             const endDate = new Date(year, month - 1, 1 + week * 7 - 1); // Hari terakhir minggu
+
+            // Mungkin perlu memeriksa apakah minggu pertama sudah masuk bulan yang sama
+            if (startDate.getMonth() !== (month - 1)) {
+                startDate.setDate(1); // Set tanggal awal ke hari pertama bulan
+            }
 
             transactions.forEach(transaction => {
                 const date = new Date(transaction.timestamp);
