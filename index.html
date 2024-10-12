@@ -43,13 +43,7 @@
             background-color: #f2f2f2;
         }
 
-        .delete-button {
-            font-size: 8px;
-            padding: 2px 5px;
-            cursor: pointer;
-        }
-
-        .edit-button {
+        .delete-button, .edit-button, .save-button {
             font-size: 8px;
             padding: 2px 5px;
             cursor: pointer;
@@ -269,13 +263,13 @@
                     transactions.push({ key, ...transaction });
 
                     const row = transactionTable.insertRow();
-                    row.insertCell(0).textContent = transaction.description;
-                    row.insertCell(1).textContent = transaction.amount;
-                    row.insertCell(2).textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
+                    row.insertCell(0).innerHTML = `<input type="text" value="${transaction.description}" readonly>`;
+                    row.insertCell(1).innerHTML = `<input type="number" value="${transaction.amount}" readonly>`;
+                    row.insertCell(2).innerHTML = `<input type="text" value="${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}" readonly>`;
                     row.insertCell(3).textContent = new Date(transaction.timestamp).toLocaleString();
                     row.insertCell(4).textContent = calculateBalance(transactions);
                     row.insertCell(5).innerHTML = `
-                        <button class="edit-button" onclick="editTransaction('${key}')">Edit</button>
+                        <button class="edit-button" onclick="editTransaction('${key}', this)">Edit</button>
                         <button class="delete-button" onclick="deleteTransaction('${key}')">Hapus</button>
                     `;
                 });
@@ -307,25 +301,33 @@
             remove(transactionRef);
         };
 
-        const editTransaction = (key) => {
-            const transaction = transactions.find(t => t.key === key);
-            document.getElementById('description').value = transaction.description;
-            document.getElementById('amount').value = transaction.amount;
-            document.getElementById('type').value = transaction.type;
-            
-            const transactionRef = ref(database, `transactions/${key}`);
-            form.onsubmit = (e) => {
-                e.preventDefault();
+        const editTransaction = (key, button) => {
+            const row = button.closest('tr');
+            const descriptionInput = row.cells[0].querySelector('input');
+            const amountInput = row.cells[1].querySelector('input');
+            const typeInput = row.cells[2].querySelector('input');
+
+            if (button.textContent === 'Edit') {
+                descriptionInput.removeAttribute('readonly');
+                amountInput.removeAttribute('readonly');
+                typeInput.removeAttribute('readonly');
+                button.textContent = 'Simpan';
+            } else {
                 const updatedTransaction = {
-                    description: document.getElementById('description').value,
-                    amount: parseFloat(document.getElementById('amount').value),
-                    type: document.getElementById('type').value,
-                    timestamp: transaction.timestamp
+                    description: descriptionInput.value,
+                    amount: parseFloat(amountInput.value),
+                    type: typeInput.value === 'Pemasukan' ? 'income' : 'expense',
+                    timestamp: new Date().toISOString()
                 };
+
+                const transactionRef = ref(database, `transactions/${key}`);
                 update(transactionRef, updatedTransaction);
-                form.reset();
-                form.onsubmit = null; // Reset form submission function to default
-            };
+
+                descriptionInput.setAttribute('readonly', true);
+                amountInput.setAttribute('readonly', true);
+                typeInput.setAttribute('readonly', true);
+                button.textContent = 'Edit';
+            }
         };
 
         downloadButton.addEventListener('click', () => {
