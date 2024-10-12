@@ -4,7 +4,11 @@ const incomeTotalDisplay = document.getElementById('income-total');
 const expenseTotalDisplay = document.getElementById('expense-total');
 const balanceDisplay = document.getElementById('balance');
 
-let transactions = [];
+let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+// Display existing transactions on load
+transactions.forEach(displayTransaction);
+updateSummary();
 
 form.addEventListener('submit', function(e) {
     e.preventDefault();
@@ -22,6 +26,7 @@ form.addEventListener('submit', function(e) {
     transactions.push(transaction);
     displayTransaction(transaction);
     updateSummary();
+    updateLocalStorage();
 
     form.reset();
 });
@@ -42,6 +47,7 @@ function removeTransaction(index) {
     transactionTable.innerHTML = '';
     transactions.forEach(displayTransaction);
     updateSummary();
+    updateLocalStorage();
 }
 
 function updateSummary() {
@@ -58,4 +64,8 @@ function updateSummary() {
     incomeTotalDisplay.textContent = `Rp ${incomeTotal}`;
     expenseTotalDisplay.textContent = `Rp ${expenseTotal}`;
     balanceDisplay.textContent = `Rp ${balance}`;
+}
+
+function updateLocalStorage() {
+    localStorage.setItem('transactions', JSON.stringify(transactions));
 }
