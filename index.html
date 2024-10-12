@@ -8,6 +8,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* Gaya untuk grafik */
+        #chart-container {
+            width: 80%; /* Lebar grafik */
+            margin: auto;
+            padding-top: 20px; /* Menambahkan jarak di atas grafik */
+        }
+
+        canvas {
+            max-width: 100%; /* Membuat grafik responsif */
+            height: 400px; /* Tinggi grafik */
+        }
+
         /* Gaya untuk tabel */
         table {
             width: 100%; /* Membuat tabel memenuhi lebar container */
@@ -29,14 +41,9 @@
 
         /* Gaya untuk tombol hapus dan edit */
         .delete-button, .edit-button {
-            font-size: 8px; /* Ukuran font tombol hapus */
+            font-size: 8px; /* Ukuran font tombol */
             padding: 2px 5px; /* Padding untuk tombol */
             cursor: pointer; /* Mengubah kursor saat hover */
-        }
-
-        #edit-form {
-            display: none; /* Sembunyikan form edit */
-            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -52,17 +59,6 @@
                 <option value="expense">Pengeluaran</option>
             </select>
             <button type="submit">Tambah</button>
-        </form>
-
-        <form id="edit-form">
-            <input type="text" id="edit-description" placeholder="Deskripsi" required>
-            <input type="number" id="edit-amount" placeholder="Jumlah" required>
-            <select id="edit-type">
-                <option value="income">Pemasukan</option>
-                <option value="expense">Pengeluaran</option>
-            </select>
-            <button type="submit">Perbarui</button>
-            <button type="button" id="cancel-edit">Batal</button>
         </form>
 
         <table>
@@ -101,13 +97,13 @@
 
         // Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyBCKzM7sv0rfxIgiTvdehUq8uL_ad9_u-4",
-            authDomain: "catatan-b9f7c.firebaseapp.com",
-            databaseURL: "https://catatan-b9f7c-default-rtdb.firebaseio.com",
-            projectId: "catatan-b9f7c",
-            storageBucket: "catatan-b9f7c.appspot.com",
-            messagingSenderId: "1012027038485",
-            appId: "1:1012027038485:web:efe4484f7fb222742de71c"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         // Initialize Firebase
@@ -120,15 +116,8 @@
         const incomeTotalDisplay = document.getElementById('income-total');
         const expenseTotalDisplay = document.getElementById('expense-total');
         const balanceDisplay = document.getElementById('balance');
-        const downloadButton = document.getElementById('download-button');
-        const editForm = document.getElementById('edit-form');
-        const editDescriptionInput = document.getElementById('edit-description');
-        const editAmountInput = document.getElementById('edit-amount');
-        const editTypeInput = document.getElementById('edit-type');
-        const cancelEditButton = document.getElementById('cancel-edit');
-
+        
         let transactions = [];
-        let editingTransactionKey = null;
 
         // Fetch transactions from Firebase
         const fetchTransactions = () => {
@@ -156,55 +145,32 @@
                 row.insertCell(2).textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
                 row.insertCell(3).textContent = new Date(transaction.timestamp).toLocaleString();
                 row.insertCell(4).textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
+                
+                // Add Edit button
+                const editButton = row.insertCell(5).appendChild(document.createElement('button'));
+                editButton.textContent = 'Edit';
+                editButton.className = 'edit-button';
+                editButton.onclick = () => editTransaction(transaction);
 
-                const actionCell = row.insertCell(5);
-                const deleteButton = actionCell.appendChild(document.createElement('button'));
+                // Add Delete button
+                const deleteButton = row.insertCell(6).appendChild(document.createElement('button'));
                 deleteButton.textContent = 'Hapus';
                 deleteButton.className = 'delete-button';
                 deleteButton.onclick = () => deleteTransaction(transaction.key);
 
-                const editButton = actionCell.appendChild(document.createElement('button'));
-                editButton.textContent = 'Edit';
-                editButton.className = 'edit-button';
-                editButton.onclick = () => openEditForm(transaction);
+                // Hitung total pemasukan dan pengeluaran
+                if (transaction.type === 'income') {
+                    incomeTotal += transaction.amount;
+                } else {
+                    expenseTotal += transaction.amount;
+                }
             });
 
-            updateTotals(transactions);
+            const balance = incomeTotal - expenseTotal;
+            incomeTotalDisplay.textContent = `Rp ${incomeTotal.toLocaleString()}`;
+            expenseTotalDisplay.textContent = `Rp ${expenseTotal.toLocaleString()}`;
+            balanceDisplay.textContent = `Rp ${balance.toLocaleString()}`;
         };
-
-        // Open edit form
-        function openEditForm(transaction) {
-            editingTransactionKey = transaction.key; // Simpan kunci transaksi yang sedang diedit
-            editDescriptionInput.value = transaction.description;
-            editAmountInput.value = transaction.amount;
-            editTypeInput.value = transaction.type;
-            editForm.style.display = 'block'; // Tampilkan form edit
-        }
-
-        // Cancel editing
-        cancelEditButton.addEventListener('click', () => {
-            editForm.style.display = 'none'; // Sembunyikan form edit
-            editingTransactionKey = null; // Reset kunci transaksi
-        });
-
-        // Update transaction
-        editForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-
-            const updatedTransaction = {
-                description: editDescriptionInput.value,
-                amount: parseFloat(editAmountInput.value),
-                type: editTypeInput.value,
-                timestamp: new Date().toISOString()
-            };
-
-            const transactionRef = ref(database, `transactions/${editingTransactionKey}`);
-            update(transactionRef, updatedTransaction); // Update transaksi di Firebase
-
-            editForm.reset(); // Reset form setelah diperbarui
-            editForm.style.display = 'none'; // Sembunyikan form edit
-            editingTransactionKey = null; // Reset kunci transaksi
-        });
 
         // Calculate balance
         function calculateBalance(transaction) {
@@ -217,8 +183,97 @@
             return balance;
         }
 
-        // Call functions to initialize app
-        fetchTransactions(); // Fetch transactions when the app loads
+        // Edit transaction
+        function editTransaction(transaction) {
+            // Set values in the form fields for editing
+            document.getElementById('description').value = transaction.description;
+            document.getElementById('amount').value = transaction.amount;
+            document.getElementById('type').value = transaction.type;
+
+            // Change the submit event to update the transaction instead of adding a new one
+            form.onsubmit = (e) => {
+                e.preventDefault();
+                updateTransaction(transaction.key);
+            };
+        }
+
+        // Update transaction in Firebase
+        function updateTransaction(key) {
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
+            const timestamp = new Date().toISOString();
+
+            // Create transaction object
+            const updatedTransaction = { description, amount, type, timestamp };
+
+            const transactionRef = ref(database, `transactions/${key}`);
+            update(transactionRef, updatedTransaction);
+            form.reset(); // Reset form setelah data diperbarui
+            form.onsubmit = addTransaction; // Kembalikan ke fungsi menambah transaksi
+        }
+
+        // Add a transaction
+        function addTransaction(e) {
+            e.preventDefault();
+
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
+            const timestamp = new Date().toISOString();
+
+            // Create transaction object
+            const transaction = { description, amount, type, timestamp };
+
+            // Add transaction to Firebase
+            const transactionRef = ref(database, 'transactions');
+            push(transactionRef, transaction);
+            form.reset(); // Reset form setelah data ditambahkan
+        }
+
+        // Delete transaction from Firebase
+        function deleteTransaction(key) {
+            const transactionRef = ref(database, `transactions/${key}`);
+            remove(transactionRef);
+        }
+
+        // Call functions to fetch transactions
+        fetchTransactions();
+
+        // Chart.js Configuration
+        const ctx = document.getElementById('myChart').getContext('2d');
+        const myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Pemasukan', 'Pengeluaran'],
+                datasets: [{
+                    label: 'Total',
+                    data: [0, 0],
+                    backgroundColor: ['rgba(75, 192, 192, 0.2)', 'rgba(255, 99, 132, 0.2)'],
+                    borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Update Chart with total values
+        function updateChart() {
+            const incomeTotal = transactions.reduce((acc, trans) => trans.type === 'income' ? acc + trans.amount : acc, 0);
+            const expenseTotal = transactions.reduce((acc, trans) => trans.type === 'expense' ? acc + trans.amount : acc, 0);
+
+            myChart.data.datasets[0].data = [incomeTotal, expenseTotal];
+            myChart.update();
+        }
+
+        // Update chart whenever transactions change
+        onValue(ref(database, 'transactions'), updateChart);
     </script>
 </body>
 </html>
