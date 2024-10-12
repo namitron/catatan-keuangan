@@ -105,10 +105,18 @@
               type
           };
 
-          // Push transaction to Firebase
-          push(ref(database, 'transactions'), transaction);
+          // Log the transaction before pushing to Firebase
+          console.log('Transaksi yang akan ditambahkan:', transaction);
 
-          form.reset();
+          // Push transaction to Firebase
+          push(ref(database, 'transactions'), transaction)
+              .then(() => {
+                  console.log('Transaksi berhasil ditambahkan');
+                  form.reset(); // Reset form setelah berhasil
+              })
+              .catch((error) => {
+                  console.error('Error menambahkan transaksi:', error);
+              });
       });
 
       // Display transaction in table
