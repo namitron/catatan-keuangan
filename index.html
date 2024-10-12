@@ -3,317 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catatan Keuangan</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Aplikasi Catatan Keuangan</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
     <style>
-
-#year, #month, #week {
-    width: 20px; /* Sesuaikan dengan lebar yang Anda inginkan */
-    padding: 5px; /* Sesuaikan dengan padding yang Anda inginkan */
-    font-size: 12px; /* Mengubah ukuran teks */
-}
-
-
-
-        
-        /* Gaya untuk grafik */
-        #chart-container {
-            width: 80%; /* Lebar grafik */
-            margin: auto;
-            padding-top: 20px; /* Menambahkan jarak di atas grafik */
+        /* Gaya CSS untuk tampilan aplikasi */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
         }
-
-        canvas {
-            max-width: 100%; /* Membuat grafik responsif */
-            height: 400px; /* Tinggi grafik */
-        }
-
-        /* Gaya untuk tabel */
         table {
-            width: 100%; /* Membuat tabel memenuhi lebar container */
-            max-width: 500px; /* Mengatur lebar maksimum tabel */
+            width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
-            font-size: 9px; /* Mengatur ukuran font tabel menjadi 9px */
+            margin-top: 20px;
         }
-
         th, td {
-            border: 1px solid #dddddd;
-            text-align: left;
-            padding: 6px; /* Mengurangi padding untuk memperkecil ukuran sel */
+            padding: 10px;
+            border: 1px solid #ccc;
         }
-
         th {
-            background-color: #f2f2f2;
+            background-color: #f4f4f4;
         }
-
-        /* Gaya untuk tombol hapus */
-        .delete-button {
-            font-size: 8px; /* Ukuran font tombol hapus */
-            padding: 2px 5px; /* Padding untuk tombol hapus */
-            cursor: pointer; /* Mengubah kursor saat hover */
+        button {
+            margin: 5px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Catatan Keuangan</h1>
-        
-        <form id="form">
-            <input type="text" id="description" placeholder="Deskripsi" required>
-            <input type="number" id="amount" placeholder="Jumlah" required>
-            <select id="type">
-                <option value="income">Pemasukan</option>
-                <option value="expense">Pengeluaran</option>
-            </select>
-            <button type="submit">Tambah</button>
-        </form>
+    <h1>Aplikasi Catatan Keuangan</h1>
+    <form id="transactionForm">
+        <label for="description">Deskripsi:</label>
+        <input type="text" id="description" required>
+        <label for="amount">Jumlah:</label>
+        <input type="number" id="amount" required>
+        <label for="type">Tipe:</label>
+        <select id="type">
+            <option value="expense">Pengeluaran</option>
+            <option value="income">Pemasukan</option>
+        </select>
+        <button type="submit">Tambah Transaksi</button>
+    </form>
+    <h2>Total Pemasukan: <span id="incomeTotal">Rp 0</span></h2>
+    <h2>Total Pengeluaran: <span id="expenseTotal">Rp 0</span></h2>
+    <h2>Saldo: <span id="balance">Rp 0</span></h2>
 
-        <!-- Pilihan untuk memilih tahun, bulan, dan minggu -->
-        <div>
-            <label for="year">Tahun:</label>
-            <select id="year"></select>
-            <label for="month">Bulan:</label>
-            <select id="month"></select>
-            <label for="week">Minggu:</label>
-            <select id="week"></select>
-            <button id="filter-button">Tampilkan Catatan</button>
-        </div>
+    <table id="transactionTable">
+        <thead>
+            <tr>
+                <th>Deskripsi</th>
+                <th>Jumlah</th>
+                <th>Tipe</th>
+                <th>Waktu</th>
+                <th>Saldo</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Transaksi akan ditambahkan di sini -->
+        </tbody>
+    </table>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Deskripsi</th>
-                    <th>Jumlah</th>
-                    <th>Tipe</th>
-                    <th>Waktu</th>
-                    <th>Saldo</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody id="transaction-table">
-            </tbody>
-        </table>
-
-        <div class="summary">
-            <h2>Ringkasan</h2>
-            <p>Pemasukan: <span id="income-total">Rp 0</span></p>
-            <p>Pengeluaran: <span id="expense-total">Rp 0</span></p>
-            <p>Saldo: <span id="balance">Rp 0</span></p>
-        </div>
-
-        <button id="download-button">Unduh Excel</button>
-        
-        <div id="chart-container">
-            <canvas id="myChart"></canvas>
-        </div>
-    </div>
-
-    <!-- Firebase Scripts -->
-    <script type="module">
-        // Import Firebase SDK
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
-
-        // Firebase configuration
+    <script>
+        // Konfigurasi Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyBCKzM7sv0rfxIgiTvdehUq8uL_ad9_u-4",
-            authDomain: "catatan-b9f7c.firebaseapp.com",
-            databaseURL: "https://catatan-b9f7c-default-rtdb.firebaseio.com",
-            projectId: "catatan-b9f7c",
-            storageBucket: "catatan-b9f7c.appspot.com",
-            messagingSenderId: "1012027038485",
-            appId: "1:1012027038485:web:efe4484f7fb222742de71c"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
+        
+        // Inisialisasi Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.getDatabase(app);
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-
-        // DOM Elements
-        const form = document.getElementById('form');
-        const transactionTable = document.getElementById('transaction-table');
-        const incomeTotalDisplay = document.getElementById('income-total');
-        const expenseTotalDisplay = document.getElementById('expense-total');
+        const transactionForm = document.getElementById('transactionForm');
+        const transactionTable = document.getElementById('transactionTable').getElementsByTagName('tbody')[0];
+        const incomeTotalDisplay = document.getElementById('incomeTotal');
+        const expenseTotalDisplay = document.getElementById('expenseTotal');
         const balanceDisplay = document.getElementById('balance');
-        const downloadButton = document.getElementById('download-button');
-        const filterButton = document.getElementById('filter-button');
 
         let transactions = [];
-        const labels = [];
-        const incomeData = [];
-        const expenseData = [];
-        const balanceData = [];
 
-        // Populate year, month, and week select elements
-        function populateDateSelectors() {
-            const yearSelect = document.getElementById('year');
-            const monthSelect = document.getElementById('month');
-            const weekSelect = document.getElementById('week');
-            const currentDate = new Date();
-            const currentYear = currentDate.getFullYear();
-            const currentMonth = currentDate.getMonth() + 1; // Bulan dimulai dari 0
-            const currentWeek = Math.ceil((currentDate.getDate() + 1) / 7); // Menghitung minggu saat ini
-
-            // Populate year
-            for (let i = currentYear - 5; i <= currentYear; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = i;
-                yearSelect.appendChild(option);
-            }
-            yearSelect.value = currentYear; // Set default tahun ke tahun saat ini
-
-            // Populate month
-            const months = [
-                "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-            ];
-            for (let i = 0; i < months.length; i++) {
-                const option = document.createElement('option');
-                option.value = i + 1; // Bulan dimulai dari 1
-                option.textContent = months[i];
-                monthSelect.appendChild(option);
-            }
-            monthSelect.value = currentMonth; // Set default bulan ke bulan saat ini
-
-            // Populate week
-            for (let i = 1; i <= 4; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = `Minggu ${i}`;
-                weekSelect.appendChild(option);
-            }
-            weekSelect.value = Math.ceil((currentDate.getDate() + 1) / 7); // Set default minggu ke minggu saat ini
-        }
-
-        // Initialize default table and chart values
-        function initializeDefaultValues() {
-            // Clear existing rows
-            transactionTable.innerHTML = ''; // Kosongkan tabel sebelum diisi
-
-            // Buat baris default di tabel
-            const row = transactionTable.insertRow();
-            row.insertCell(0).textContent = 'Tidak ada data';
-            row.insertCell(1).textContent = 'Rp 0';
-            row.insertCell(2).textContent = '-';
-            row.insertCell(3).textContent = '-';
-            row.insertCell(4).textContent = 'Rp 0';
-            row.insertCell(5).innerHTML = '<button class="delete-button" disabled>Hapus</button>';
-
-            // Set nilai default untuk ringkasan
-            incomeTotalDisplay.textContent = 'Rp 0';
-            expenseTotalDisplay.textContent = 'Rp 0';
-            balanceDisplay.textContent = 'Rp 0';
-
-            // Set nilai default untuk grafik
-            labels.length = 0;
-            incomeData.length = 0;
-            expenseData.length = 0;
-            balanceData.length = 0;
-
-            // Memperbarui grafik
-            myChart.update(); // Perbarui grafik
-        }
-
-        // Chart.js setup
-        const ctx = document.getElementById('myChart').getContext('2d');
-        const myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Pemasukan',
-                        data: incomeData,
-                        borderColor: 'green',
-                        fill: false,
-                    },
-                    {
-                        label: 'Pengeluaran',
-                        data: expenseData,
-                        borderColor: 'red',
-                        fill: false,
-                    },
-                    {
-                        label: 'Saldo',
-                        data: balanceData,
-                        borderColor: 'blue',
-                        fill: false,
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Waktu'
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Jumlah (Rp)'
-                        }
-                    }
-                }
-            }
-        });
-
-        // Add a transaction
-        form.addEventListener('submit', (e) => {
+        transactionForm.addEventListener('submit', (e) => {
             e.preventDefault();
-
             const description = document.getElementById('description').value;
             const amount = parseFloat(document.getElementById('amount').value);
             const type = document.getElementById('type').value;
-            const timestamp = new Date().toISOString();
+            const timestamp = Date.now();
 
-            // Create transaction object
             const transaction = { description, amount, type, timestamp };
-
-            // Add transaction to Firebase
-            const transactionRef = ref(database, 'transactions');
-            push(transactionRef, transaction);
-            form.reset(); // Reset form setelah data ditambahkan
+            saveTransaction(transaction);
+            transactionForm.reset();
         });
 
-        // Fetch transactions from Firebase
+        const saveTransaction = (transaction) => {
+            const transactionRef = firebase.ref(database, 'transactions/' + Date.now());
+            firebase.set(transactionRef, transaction);
+        };
+
         const fetchTransactions = () => {
-            const transactionRef = ref(database, 'transactions');
-            onValue(transactionRef, (snapshot) => {
+            const transactionsRef = firebase.ref(database, 'transactions/');
+            firebase.onValue(transactionsRef, (snapshot) => {
                 transactions = [];
-                snapshot.forEach(childSnapshot => {
-                    transactions.push({ key: childSnapshot.key, ...childSnapshot.val() });
+                snapshot.forEach((childSnapshot) => {
+                    const data = childSnapshot.val();
+                    data.key = childSnapshot.key;
+                    transactions.push(data);
                 });
                 updateTable();
             });
         };
 
-        // Update transaction table
         const updateTable = () => {
-            transactionTable.innerHTML = ''; // Kosongkan tabel sebelum diisi
+            transactionTable.innerHTML = ''; 
 
             let incomeTotal = 0;
             let expenseTotal = 0;
 
             transactions.forEach(transaction => {
                 const row = transactionTable.insertRow();
-                row.insertCell(0).textContent = transaction.description;
-                row.insertCell(1).textContent = `Rp ${transaction.amount.toLocaleString()}`;
-                row.insertCell(2).textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
-                row.insertCell(3).textContent = new Date(transaction.timestamp).toLocaleString();
-                row.insertCell(4).textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
-                const deleteButton = row.insertCell(5).appendChild(document.createElement('button'));
+                
+                // Deskripsi
+                const descriptionCell = row.insertCell(0);
+                const descriptionInput = document.createElement('input');
+                descriptionInput.value = transaction.description;
+                descriptionInput.onblur = () => updateTransaction(transaction.key, { ...transaction, description: descriptionInput.value });
+                descriptionCell.appendChild(descriptionInput);
+
+                // Jumlah
+                const amountCell = row.insertCell(1);
+                const amountInput = document.createElement('input');
+                amountInput.type = 'number';
+                amountInput.value = transaction.amount;
+                amountInput.onblur = () => updateTransaction(transaction.key, { ...transaction, amount: parseFloat(amountInput.value) });
+                amountCell.appendChild(amountInput);
+
+                // Tipe
+                const typeCell = row.insertCell(2);
+                typeCell.textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
+
+                // Waktu
+                const timeCell = row.insertCell(3);
+                timeCell.textContent = new Date(transaction.timestamp).toLocaleString();
+
+                // Saldo
+                const balanceCell = row.insertCell(4);
+                balanceCell.textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
+
+                // Aksi
+                const actionCell = row.insertCell(5);
+                const deleteButton = actionCell.appendChild(document.createElement('button'));
                 deleteButton.textContent = 'Hapus';
                 deleteButton.className = 'delete-button';
                 deleteButton.onclick = () => deleteTransaction(transaction.key);
 
-                // Hitung total pemasukan dan pengeluaran
                 if (transaction.type === 'income') {
                     incomeTotal += transaction.amount;
                 } else {
@@ -325,77 +171,26 @@
             incomeTotalDisplay.textContent = `Rp ${incomeTotal.toLocaleString()}`;
             expenseTotalDisplay.textContent = `Rp ${expenseTotal.toLocaleString()}`;
             balanceDisplay.textContent = `Rp ${balance.toLocaleString()}`;
-
-            // Perbarui grafik
-            updateChart();
         };
 
-        // Calculate balance
-        function calculateBalance(transaction) {
-            let balance = 0;
-            transactions.forEach(trans => {
-                if (trans.key <= transaction.key) {
-                    balance += trans.type === 'income' ? trans.amount : -trans.amount;
-                }
-            });
-            return balance;
-        }
+        const updateTransaction = (key, updatedTransaction) => {
+            const transactionRef = firebase.ref(database, `transactions/${key}`);
+            firebase.set(transactionRef, updatedTransaction);
+        };
 
-        // Update chart with transaction data
-        function updateChart() {
-            labels.length = 0;
-            incomeData.length = 0;
-            expenseData.length = 0;
-            balanceData.length = 0;
+        const deleteTransaction = (key) => {
+            const transactionRef = firebase.ref(database, `transactions/${key}`);
+            firebase.remove(transactionRef);
+        };
 
-            transactions.forEach(transaction => {
-                labels.push(new Date(transaction.timestamp).toLocaleString());
-                incomeData.push(transaction.type === 'income' ? transaction.amount : 0);
-                expenseData.push(transaction.type === 'expense' ? transaction.amount : 0);
-                balanceData.push(calculateBalance(transaction));
-            });
+        const calculateBalance = (transaction) => {
+            return transactions.reduce((total, trans) => {
+                return trans.type === 'income' ? total + trans.amount : total - trans.amount;
+            }, 0);
+        };
 
-            myChart.update(); // Perbarui grafik
-        }
-
-        // Delete transaction
-        function deleteTransaction(key) {
-            const transactionRef = ref(database, `transactions/${key}`);
-            remove(transactionRef);
-        }
-
-        // Download transactions as Excel
-        downloadButton.addEventListener('click', () => {
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(transactions);
-            XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
-            XLSX.writeFile(wb, 'transactions.xlsx');
-        });
-
-        // Filter transactions by selected date
-        filterButton.addEventListener('click', () => {
-            const year = document.getElementById('year').value;
-            const month = document.getElementById('month').value;
-            const week = document.getElementById('week').value;
-
-            // Logic to filter transactions based on year, month, and week
-            const filteredTransactions = transactions.filter(transaction => {
-                const transactionDate = new Date(transaction.timestamp);
-                const transactionYear = transactionDate.getFullYear();
-                const transactionMonth = transactionDate.getMonth() + 1; // Bulan dimulai dari 0
-                const transactionWeek = Math.ceil(transactionDate.getDate() / 7); // Menghitung minggu
-
-                return transactionYear == year && transactionMonth == month && transactionWeek == week;
-            });
-
-            transactions = filteredTransactions; // Update transaksi yang ditampilkan
-            updateTable(); // Perbarui tabel
-        });
-
-        // Call functions to initialize app
-        populateDateSelectors();
-        initializeDefaultValues();
-        fetchTransactions(); // Fetch transactions when the app loads
+        // Ambil transaksi saat halaman dimuat
+        window.onload = fetchTransactions;
     </script>
 </body>
 </html>
