@@ -96,6 +96,7 @@
         const labels = []; // Untuk label waktu
         const incomeData = []; // Untuk data pemasukan
         const expenseData = []; // Untuk data pengeluaran
+        const balanceData = []; // Untuk data saldo
 
         // Chart.js setup
         const ctx = document.getElementById('myChart').getContext('2d');
@@ -103,17 +104,26 @@
             type: 'line',
             data: {
                 labels: labels,
-                datasets: [{
-                    label: 'Pemasukan',
-                    data: incomeData,
-                    borderColor: 'green',
-                    fill: false
-                }, {
-                    label: 'Pengeluaran',
-                    data: expenseData,
-                    borderColor: 'red',
-                    fill: false
-                }]
+                datasets: [
+                    {
+                        label: 'Pemasukan',
+                        data: incomeData,
+                        borderColor: 'green',
+                        fill: false
+                    },
+                    {
+                        label: 'Pengeluaran',
+                        data: expenseData,
+                        borderColor: 'red',
+                        fill: false
+                    },
+                    {
+                        label: 'Saldo',
+                        data: balanceData,
+                        borderColor: 'blue',
+                        fill: false
+                    }
+                ]
             },
             options: {
                 scales: {
@@ -132,6 +142,10 @@
             labels.length = 0; // Mengosongkan labels
             incomeData.length = 0; // Mengosongkan data pemasukan
             expenseData.length = 0; // Mengosongkan data pengeluaran
+            balanceData.length = 0; // Mengosongkan data saldo
+
+            let totalIncome = 0; // Total pemasukan
+            let totalExpense = 0; // Total pengeluaran
 
             for (let key in data) {
                 const transaction = data[key];
@@ -149,15 +163,20 @@
                 });
 
                 // Menambahkan label dan data ke grafik
+                labels.push(formattedDate);
                 if (transaction.type === 'income') {
-                    labels.push(formattedDate);
+                    totalIncome += transaction.amount;
                     incomeData.push(transaction.amount);
                     expenseData.push(0); // Tambahkan 0 untuk pengeluaran
                 } else {
-                    labels.push(formattedDate);
+                    totalExpense += transaction.amount;
                     incomeData.push(0); // Tambahkan 0 untuk pemasukan
                     expenseData.push(transaction.amount);
                 }
+
+                // Hitung saldo dan simpan di balanceData
+                const currentBalance = totalIncome - totalExpense;
+                balanceData.push(currentBalance);
             }
 
             updateSummary();
@@ -241,8 +260,8 @@
             balanceDisplay.textContent = `Rp ${balance}`;
         }
 
-        // Download Excel file
-        downloadButton.addEventListener('click', function() {
+        // Download transactions as Excel file
+        downloadButton.addEventListener('click', () => {
             const data = transactions.map(transaction => ({
                 Deskripsi: transaction.description,
                 Jumlah: transaction.amount,
@@ -254,7 +273,7 @@
                     hour: '2-digit',
                     minute: '2-digit',
                     second: '2-digit'
-                }) // Menambahkan waktu ke data untuk Excel
+                })
             }));
             downloadExcel(data);
         });
