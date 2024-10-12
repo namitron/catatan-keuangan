@@ -372,8 +372,8 @@
             XLSX.writeFile(wb, 'transactions.xlsx');
         });
 
-// Filter transactions by selected date
-filterButton.addEventListener('click', () => {
+    // Filter transactions by selected date
+    filterButton.addEventListener('click', () => {
     const year = document.getElementById('year').value;
     const month = document.getElementById('month').value;
     const week = document.getElementById('week').value;
@@ -418,7 +418,7 @@ filterButton.addEventListener('click', () => {
 
     // Update totals
     updateTotals(filteredTransactions);
-});
+    });
 
 
 
@@ -426,6 +426,24 @@ filterButton.addEventListener('click', () => {
         populateDateSelectors();
         initializeDefaultValues();
         fetchTransactions(); // Fetch transactions when the app loads
+        function updateTotals(transactionsToUpdate) {
+    let incomeTotal = 0;
+    let expenseTotal = 0;
+
+    transactionsToUpdate.forEach(transaction => {
+        if (transaction.type === 'income') {
+            incomeTotal += transaction.amount;
+        } else {
+            expenseTotal += transaction.amount;
+        }
+    });
+
+    const balance = incomeTotal - expenseTotal;
+    incomeTotalDisplay.textContent = `Rp ${incomeTotal.toLocaleString()}`;
+    expenseTotalDisplay.textContent = `Rp ${expenseTotal.toLocaleString()}`;
+    balanceDisplay.textContent = `Rp ${balance.toLocaleString()}`;
+}
+
     </script>
 </body>
 </html>
