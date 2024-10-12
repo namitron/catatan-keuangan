@@ -8,23 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        #year, #month, #week {
-            width: 60px;
-            padding: 5px;
-            font-size: 12px;
-        }
-
-        #chart-container {
-            width: 80%;
-            margin: auto;
-            padding-top: 20px;
-        }
-
-        canvas {
-            max-width: 100%;
-            height: 400px;
-        }
-
+        /* Styling tabel dan elemen */
         table {
             width: 100%;
             max-width: 500px;
@@ -43,7 +27,7 @@
             background-color: #f2f2f2;
         }
 
-        .delete-button, .edit-button, .save-button {
+        .edit-button, .delete-button {
             font-size: 10px;
             padding: 4px 8px;
             cursor: pointer;
@@ -63,16 +47,6 @@
             </select>
             <button type="submit">Tambah</button>
         </form>
-
-        <div>
-            <label for="year">Tahun:</label>
-            <select id="year"></select>
-            <label for="month">Bulan:</label>
-            <select id="month"></select>
-            <label for="week">Minggu:</label>
-            <select id="week"></select>
-            <button id="filter-button">Tampilkan Catatan</button>
-        </div>
 
         <table>
             <thead>
@@ -96,10 +70,6 @@
         </div>
 
         <button id="download-button">Unduh Excel</button>
-        
-        <div id="chart-container">
-            <canvas id="myChart"></canvas>
-        </div>
     </div>
 
     <script type="module">
@@ -107,13 +77,13 @@
         import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyBCKzM7sv0rfxIgiTvdehUq8uL_ad9_u-4",
-            authDomain: "catatan-b9f7c.firebaseapp.com",
-            databaseURL: "https://catatan-b9f7c-default-rtdb.firebaseio.com",
-            projectId: "catatan-b9f7c",
-            storageBucket: "catatan-b9f7c.appspot.com",
-            messagingSenderId: "1012027038485",
-            appId: "1:1012027038485:web:efe4484f7fb222742de71c"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -128,59 +98,6 @@
 
         let transactions = [];
         
-        function populateDateSelectors() {
-            const yearSelect = document.getElementById('year');
-            const monthSelect = document.getElementById('month');
-            const weekSelect = document.getElementById('week');
-            const currentDate = new Date();
-            const currentYear = currentDate.getFullYear();
-            const currentMonth = currentDate.getMonth() + 1;
-            const currentWeek = Math.ceil((currentDate.getDate() + 1) / 7);
-
-            for (let i = currentYear - 5; i <= currentYear; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = i;
-                yearSelect.appendChild(option);
-            }
-            yearSelect.value = currentYear;
-
-            const months = [
-                "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-            ];
-            for (let i = 0; i < months.length; i++) {
-                const option = document.createElement('option');
-                option.value = i + 1;
-                option.textContent = months[i];
-                monthSelect.appendChild(option);
-            }
-            monthSelect.value = currentMonth;
-
-            for (let i = 1; i <= 4; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = `Minggu ${i}`;
-                weekSelect.appendChild(option);
-            }
-            weekSelect.value = Math.ceil((currentDate.getDate() + 1) / 7);
-        }
-
-        function initializeDefaultValues() {
-            transactionTable.innerHTML = '';
-            const row = transactionTable.insertRow();
-            row.insertCell(0).textContent = 'Tidak ada data';
-            row.insertCell(1).textContent = 'Rp 0';
-            row.insertCell(2).textContent = '-';
-            row.insertCell(3).textContent = '-';
-            row.insertCell(4).textContent = 'Rp 0';
-            row.insertCell(5).innerHTML = '<button class="delete-button" disabled>Hapus</button>';
-
-            incomeTotalDisplay.textContent = 'Rp 0';
-            expenseTotalDisplay.textContent = 'Rp 0';
-            balanceDisplay.textContent = 'Rp 0';
-        }
-
         form.addEventListener('submit', (e) => {
             e.preventDefault();
 
@@ -210,7 +127,10 @@
                     const row = transactionTable.insertRow();
                     row.insertCell(0).innerHTML = `<input type="text" value="${transaction.description}" readonly>`;
                     row.insertCell(1).innerHTML = `<input type="number" value="${transaction.amount}" readonly>`;
-                    row.insertCell(2).innerHTML = `<input type="text" value="${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}" readonly>`;
+                    row.insertCell(2).innerHTML = `<select disabled>
+                        <option value="income" ${transaction.type === 'income' ? 'selected' : ''}>Pemasukan</option>
+                        <option value="expense" ${transaction.type === 'expense' ? 'selected' : ''}>Pengeluaran</option>
+                    </select>`;
                     row.insertCell(3).textContent = new Date(transaction.timestamp).toLocaleString();
                     row.insertCell(4).textContent = calculateBalance(transactions);
                     row.insertCell(5).innerHTML = `
@@ -250,18 +170,18 @@
             const row = button.closest('tr');
             const descriptionInput = row.cells[0].querySelector('input');
             const amountInput = row.cells[1].querySelector('input');
-            const typeInput = row.cells[2].querySelector('input');
+            const typeInput = row.cells[2].querySelector('select');
 
             if (button.textContent === 'Edit') {
                 descriptionInput.removeAttribute('readonly');
                 amountInput.removeAttribute('readonly');
-                typeInput.removeAttribute('readonly');
+                typeInput.removeAttribute('disabled');
                 button.textContent = 'Simpan';
             } else {
                 const updatedTransaction = {
                     description: descriptionInput.value,
                     amount: parseFloat(amountInput.value),
-                    type: typeInput.value === 'Pemasukan' ? 'income' : 'expense',
+                    type: typeInput.value,
                     timestamp: new Date().toISOString()
                 };
 
@@ -270,7 +190,7 @@
 
                 descriptionInput.setAttribute('readonly', true);
                 amountInput.setAttribute('readonly', true);
-                typeInput.setAttribute('readonly', true);
+                typeInput.setAttribute('disabled', true);
                 button.textContent = 'Edit';
             }
         };
@@ -283,9 +203,7 @@
         });
 
         window.onload = () => {
-            populateDateSelectors();
             fetchTransactions();
-            initializeDefaultValues();
         };
     </script>
 </body>
