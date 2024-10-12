@@ -294,41 +294,91 @@
             });
         };
 
-        // Update transaction table
-        const updateTable = () => {
-            transactionTable.innerHTML = ''; // Kosongkan tabel sebelum diisi
 
-            let incomeTotal = 0;
-            let expenseTotal = 0;
+// Update transaction table
+const updateTable = () => {
+    transactionTable.innerHTML = ''; // Kosongkan tabel sebelum diisi
 
-            transactions.forEach(transaction => {
-                const row = transactionTable.insertRow();
-                row.insertCell(0).textContent = transaction.description;
-                row.insertCell(1).textContent = `Rp ${transaction.amount.toLocaleString()}`;
-                row.insertCell(2).textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
-                row.insertCell(3).textContent = new Date(transaction.timestamp).toLocaleString();
-                row.insertCell(4).textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
-                const deleteButton = row.insertCell(5).appendChild(document.createElement('button'));
-                deleteButton.textContent = 'Hapus';
-                deleteButton.className = 'delete-button';
-                deleteButton.onclick = () => deleteTransaction(transaction.key);
+    let incomeTotal = 0;
+    let expenseTotal = 0;
 
-                // Hitung total pemasukan dan pengeluaran
-                if (transaction.type === 'income') {
-                    incomeTotal += transaction.amount;
-                } else {
-                    expenseTotal += transaction.amount;
-                }
-            });
+    transactions.forEach(transaction => {
+        const row = transactionTable.insertRow();
+        
+        // Editable description cell
+        const descriptionCell = row.insertCell(0);
+        descriptionCell.textContent = transaction.description;
+        descriptionCell.onclick = () => editCell(descriptionCell, transaction.key, 'description');
+        
+        // Editable amount cell
+        const amountCell = row.insertCell(1);
+        amountCell.textContent = `Rp ${transaction.amount.toLocaleString()}`;
+        amountCell.onclick = () => editCell(amountCell, transaction.key, 'amount');
+        
+        row.insertCell(2).textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
+        row.insertCell(3).textContent = new Date(transaction.timestamp).toLocaleString();
+        row.insertCell(4).textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
+        
+        const deleteButton = row.insertCell(5).appendChild(document.createElement('button'));
+        deleteButton.textContent = 'Hapus';
+        deleteButton.className = 'delete-button';
+        deleteButton.onclick = () => deleteTransaction(transaction.key);
 
-            const balance = incomeTotal - expenseTotal;
-            incomeTotalDisplay.textContent = `Rp ${incomeTotal.toLocaleString()}`;
-            expenseTotalDisplay.textContent = `Rp ${expenseTotal.toLocaleString()}`;
-            balanceDisplay.textContent = `Rp ${balance.toLocaleString()}`;
+        // Hitung total pemasukan dan pengeluaran
+        if (transaction.type === 'income') {
+            incomeTotal += transaction.amount;
+        } else {
+            expenseTotal += transaction.amount;
+        }
+    });
 
-            // Perbarui grafik
-            updateChart();
-        };
+    const balance = incomeTotal - expenseTotal;
+    incomeTotalDisplay.textContent = `Rp ${incomeTotal.toLocaleString()}`;
+    expenseTotalDisplay.textContent = `Rp ${expenseTotal.toLocaleString()}`;
+    balanceDisplay.textContent = `Rp ${balance.toLocaleString()}`;
+
+    // Perbarui grafik
+    updateChart();
+};
+
+
+// Function to edit cell content
+function editCell(cell, transactionKey, field) {
+    const originalValue = cell.textContent.trim();
+    const input = document.createElement('input');
+    input.value = field === 'amount' ? originalValue.replace('Rp ', '').replace('.', '').replace(',', '') : originalValue; // format amount
+    cell.innerHTML = '';
+    cell.appendChild(input);
+    input.focus();
+
+    input.onblur = () => {
+        const newValue = input.value;
+        if (newValue !== originalValue) {
+            updateTransaction(transactionKey, field, newValue);
+        }
+        cell.textContent = field === 'amount' ? `Rp ${parseFloat(newValue).toLocaleString()}` : newValue; // format amount
+    };
+}
+
+
+
+// Function to update transaction in Firebase
+function updateTransaction(key, field, newValue) {
+    const transactionRef = ref(database, 'transactions/' + key);
+    if (field === 'amount') {
+        newValue = parseFloat(newValue);
+    }
+    update(transactionRef, { [field]: newValue });
+}
+
+
+
+
+
+
+
+
+        
 
         // Calculate balance
         function calculateBalance(transaction) {
