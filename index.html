@@ -105,7 +105,7 @@
     <script type="module">
         // Import Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
         // Firebase configuration
         const firebaseConfig = {
@@ -234,7 +234,6 @@
                 ],
             },
             options: {
-                responsive: true,
                 scales: {
                     x: {
                         title: {
@@ -261,11 +260,13 @@
             const timestamp = Date.now(); // Mendapatkan waktu saat ini
 
             // Simpan transaksi ke Firebase
-            push(ref(database, 'transactions'), {
+            const newTransactionRef = push(ref(database, 'transactions')); // Simpan referensi baru
+            newTransactionRef.set({
                 description,
                 amount,
                 type,
-                timestamp
+                timestamp,
+                key: newTransactionRef.key // Tambahkan key ke data transaksi
             });
 
             // Reset form
@@ -276,7 +277,9 @@
         onValue(ref(database, 'transactions'), (snapshot) => {
             transactions = [];
             snapshot.forEach(childSnapshot => {
-                transactions.push(childSnapshot.val());
+                const transaction = childSnapshot.val();
+                transaction.key = childSnapshot.key; // Simpan key transaksi
+                transactions.push(transaction);
             });
             updateSummaryAndChart();
             updateTransactionTable();
@@ -359,7 +362,7 @@
         // Menghapus transaksi dari database Firebase
         function deleteTransaction(transaction) {
             const transactionRef = ref(database, `transactions/${transaction.key}`);
-            transactionRef.remove();
+            remove(transactionRef); // Menghapus transaksi dengan key
         }
 
         // Fungsi untuk mengunduh data sebagai file Excel
