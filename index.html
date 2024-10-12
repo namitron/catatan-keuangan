@@ -331,14 +331,10 @@ const updateTable = () => {
         // Editable balance cell
         const balanceCell = row.insertCell(4);
         balanceCell.textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
-
-        // Action cell with Delete button
+        
+        // Action cell (tombol hapus tidak ditampilkan)
         const actionCell = row.insertCell(5);
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Hapus';
-        deleteButton.className = 'delete-button';
-        deleteButton.onclick = () => deleteTransaction(transaction.key);
-        actionCell.appendChild(deleteButton);
+        actionCell.innerHTML = ''; // Tidak ada tombol di sini
     });
 
     const balance = incomeTotal - expenseTotal;
@@ -385,32 +381,14 @@ function editCell(cell, transactionKey, field) {
             cell.textContent = newValue;
         }
 
-        // Kembalikan tombol Hapus
-        cell.innerHTML = ''; // Kosongkan cell sebelum menambahkan tombol Hapus
-        const deleteButton = createDeleteButton(transactionKey);
-        cell.appendChild(deleteButton);
-    };
-
-    // Kembalikan tombol Hapus jika mengklik di luar
-    input.onblur = () => {
-        cell.innerHTML = originalValue;
-        const deleteButton = createDeleteButton(transactionKey);
-        cell.appendChild(deleteButton);
+        // Hapus tombol Simpan setelah disimpan
+        cell.innerHTML = cell.textContent; // Kembalikan text yang ditampilkan
     };
 
     // Tambahkan tombol Simpan di kolom aksi
     const actionCell = cell.parentNode.cells[5]; // Mendapatkan cell aksi
     actionCell.innerHTML = ''; // Kosongkan cell aksi
     actionCell.appendChild(saveButton);
-}
-
-// Function to create a delete button
-function createDeleteButton(transactionKey) {
-    const deleteButton = document.createElement('button');
-    deleteButton.textContent = 'Hapus';
-    deleteButton.className = 'delete-button';
-    deleteButton.onclick = () => deleteTransaction(transactionKey);
-    return deleteButton;
 }
 
 // Function to update transaction in Firebase
