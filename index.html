@@ -83,8 +83,7 @@
                     <th>Aksi</th>
                 </tr>
             </thead>
-            <tbody id="transaction-table">
-            </tbody>
+            <tbody id="transaction-table"></tbody>
         </table>
 
         <div class="summary">
@@ -102,12 +101,12 @@
     </div>
 
     <!-- Firebase Scripts -->
-    <script type="module"> 
-        // Import the functions you need from the SDKs you need
+    <script type="module">
+        // Import Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
         import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
-        // Your web app's Firebase configuration
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCThcGVbqaOSvDhWARk0-4Icqxt95vuVgY",
             authDomain: "catatan-67be8.firebaseapp.com",
@@ -129,6 +128,7 @@
         const expenseTotalDisplay = document.getElementById('expense-total');
         const balanceDisplay = document.getElementById('balance');
         const downloadButton = document.getElementById('download-button');
+        const filterButton = document.getElementById('filter-button');
 
         let transactions = [];
         const labels = [];
@@ -231,158 +231,148 @@
                         data: balanceData,
                         borderColor: 'blue',
                         fill: false,
-                    },
-                ],
+                    }
+                ]
             },
             options: {
+                responsive: true,
                 scales: {
                     x: {
+                        type: 'category',
                         title: {
                             display: true,
-                            text: 'Tanggal dan Waktu',
-                        },
+                            text: 'Waktu'
+                        }
                     },
                     y: {
                         title: {
                             display: true,
-                            text: 'Jumlah (Rp)',
-                        },
-                    },
-                },
-            },
-        });
-
-        // Fungsi untuk menambah transaksi ke database Firebase
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const description = document.getElementById('description').value;
-            const amount = parseFloat(document.getElementById('amount').value);
-            const type = document.getElementById('type').value;
-            const timestamp = Date.now(); // Mendapatkan waktu saat ini
-
-            // Simpan transaksi ke Firebase
-            const newTransactionRef = push(ref(database, 'transactions')); // Simpan referensi baru
-            newTransactionRef.set({
-                description,
-                amount,
-                type,
-                timestamp,
-                key: newTransactionRef.key // Tambahkan key ke data transaksi
-            });
-
-            // Reset form
-            form.reset();
-        });
-
-        // Mengambil data transaksi dari Firebase
-        onValue(ref(database, 'transactions'), (snapshot) => {
-            transactions = [];
-            snapshot.forEach(childSnapshot => {
-                const transaction = childSnapshot.val();
-                transaction.key = childSnapshot.key; // Simpan key transaksi
-                transactions.push(transaction);
-            });
-            updateSummaryAndChart();
-            updateTransactionTable();
-        });
-
-        // Memperbarui ringkasan dan grafik
-        function updateSummaryAndChart() {
-            let incomeTotal = 0;
-            let expenseTotal = 0;
-
-            transactions.forEach(transaction => {
-                if (transaction.type === 'income') {
-                    incomeTotal += transaction.amount;
-                } else {
-                    expenseTotal += transaction.amount;
+                            text: 'Jumlah (Rp)'
+                        }
+                    }
                 }
+            }
+        });
+
+        // Fetch transactions from Firebase
+        function fetchTransactions() {
+            const transactionsRef = ref(database, 'transactions');
+            onValue(transactionsRef, (snapshot) => {
+                transactions = [];
+                snapshot.forEach((childSnapshot) => {
+                    const transaction = childSnapshot.val();
+                    transactions.push({ ...transaction, key: childSnapshot.key });
+                });
+
+                updateTable();
             });
-
-            const balanceTotal = incomeTotal - expenseTotal;
-
-            incomeTotalDisplay.textContent = `Rp ${incomeTotal}`;
-            expenseTotalDisplay.textContent = `Rp ${expenseTotal}`;
-            balanceDisplay.textContent = `Rp ${balanceTotal}`;
-
-            // Clear current data
-            labels.length = 0;
-            incomeData.length = 0;
-            expenseData.length = 0;
-            balanceData.length = 0;
-
-            // Populate the chart data
-            transactions.forEach(transaction => {
-                const date = new Date(transaction.timestamp);
-                // Format label dengan menambahkan waktu
-                const label = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-                const amount = transaction.amount;
-
-                if (transaction.type === 'income') {
-                    incomeData.push(amount);
-                    expenseData.push(0);
-                } else {
-                    incomeData.push(0);
-                    expenseData.push(amount);
-                }
-
-                labels.push(label);
-
-                // Update the balance data
-                const currentBalance = (incomeData.reduce((a, b) => a + b, 0)) - (expenseData.reduce((a, b) => a + b, 0));
-                balanceData.push(currentBalance);
-            });
-
-            myChart.update();
         }
 
-        // Memperbarui tabel transaksi
-        function updateTransactionTable() {
-            transactionTable.innerHTML = ''; // Kosongkan tabel sebelum diisi
+        // Update table and calculate totals
+        function updateTable() {
+            transactionTable.innerHTML = ''; // Kosongkan tabel
+            let incomeTotal = 0;
+            let expenseTotal = 0;
 
             transactions.forEach(transaction => {
                 const row = transactionTable.insertRow();
                 row.insertCell(0).textContent = transaction.description;
                 row.insertCell(1).textContent = `Rp ${transaction.amount}`;
                 row.insertCell(2).textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
-                const date = new Date(transaction.timestamp);
-                row.insertCell(3).textContent = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-                const currentBalance = transactions.filter(t => t.timestamp <= transaction.timestamp).reduce((acc, t) => acc + (t.type === 'income' ? t.amount : -t.amount), 0);
-                row.insertCell(4).textContent = `Rp ${currentBalance}`;
+                row.insertCell(3).textContent = new Date(transaction.timestamp).toLocaleString(); // Format waktu
+                row.insertCell(4).textContent = `Rp ${transaction.type === 'income' ? incomeTotal += transaction.amount : expenseTotal += transaction.amount}`;
                 const deleteCell = row.insertCell(5);
                 const deleteButton = document.createElement('button');
                 deleteButton.textContent = 'Hapus';
                 deleteButton.className = 'delete-button';
-                deleteButton.onclick = () => {
-                    deleteTransaction(transaction);
-                };
+                deleteButton.onclick = () => deleteTransaction(transaction.key); // Hapus transaksi berdasarkan key
                 deleteCell.appendChild(deleteButton);
             });
+
+            incomeTotalDisplay.textContent = `Rp ${incomeTotal}`;
+            expenseTotalDisplay.textContent = `Rp ${expenseTotal}`;
+            balanceDisplay.textContent = `Rp ${incomeTotal - expenseTotal}`;
+
+            // Update chart data
+            updateChart();
         }
 
-        // Menghapus transaksi dari database Firebase
-        function deleteTransaction(transaction) {
-            const transactionRef = ref(database, `transactions/${transaction.key}`);
-            remove(transactionRef) // Menghapus transaksi dengan key
+        // Update chart data
+        function updateChart() {
+            labels.length = 0;
+            incomeData.length = 0;
+            expenseData.length = 0;
+            balanceData.length = 0;
+
+            transactions.forEach(transaction => {
+                const date = new Date(transaction.timestamp).toLocaleString();
+                if (!labels.includes(date)) {
+                    labels.push(date);
+                    incomeData.push(0);
+                    expenseData.push(0);
+                    balanceData.push(0);
+                }
+                const index = labels.indexOf(date);
+                if (transaction.type === 'income') {
+                    incomeData[index] += transaction.amount;
+                } else {
+                    expenseData[index] += transaction.amount;
+                }
+            });
+
+            // Calculate balance data
+            for (let i = 0; i < labels.length; i++) {
+                balanceData[i] = incomeData[i] - expenseData[i];
+            }
+
+            myChart.update(); // Perbarui grafik
+        }
+
+        // Delete transaction
+        function deleteTransaction(key) {
+            const transactionRef = ref(database, 'transactions/' + key);
+            remove(transactionRef)
                 .then(() => {
-                    console.log('Transaksi berhasil dihapus:', transaction.key);
+                    console.log('Transaksi dihapus dengan sukses.');
                 })
                 .catch((error) => {
-                    console.error('Gagal menghapus transaksi:', error);
+                    console.error('Error menghapus transaksi:', error);
                 });
         }
 
-        // Fungsi untuk mengunduh data sebagai file Excel
-        downloadButton.addEventListener('click', () => {
-            const worksheet = XLSX.utils.json_to_sheet(transactions);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Catatan Keuangan");
-            XLSX.writeFile(workbook, "catatan_keuangan.xlsx");
+        // Handle form submission
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
+            const timestamp = Date.now();
+
+            // Save transaction to Firebase
+            const newTransactionRef = push(ref(database, 'transactions'));
+            newTransactionRef.set({
+                description,
+                amount,
+                type,
+                timestamp,
+                key: newTransactionRef.key
+            });
+
+            form.reset(); // Reset form
         });
 
-        // Memanggil fungsi untuk mengisi pilihan tanggal saat halaman dimuat
+        // Handle download button click
+        downloadButton.addEventListener('click', () => {
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.json_to_sheet(transactions);
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions');
+            XLSX.writeFile(workbook, 'catatan_keuangan.xlsx');
+        });
+
+        // Initialize
         populateDateSelectors();
-        initializeDefaultValues();
+        fetchTransactions();
+        initializeDefaultValues(); // Menyiapkan nilai default
     </script>
 </body>
 </html>
