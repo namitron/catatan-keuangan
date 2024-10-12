@@ -9,7 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         #year, #month, #week {
-            width: 20px;
+            width: 60px;
             padding: 5px;
             font-size: 12px;
         }
@@ -30,13 +30,13 @@
             max-width: 500px;
             border-collapse: collapse;
             margin-bottom: 20px;
-            font-size: 9px;
+            font-size: 12px;
         }
 
         th, td {
             border: 1px solid #dddddd;
             text-align: left;
-            padding: 6px;
+            padding: 8px;
         }
 
         th {
@@ -44,8 +44,8 @@
         }
 
         .delete-button, .edit-button, .save-button {
-            font-size: 8px;
-            padding: 2px 5px;
+            font-size: 10px;
+            padding: 4px 8px;
             cursor: pointer;
         }
     </style>
@@ -125,14 +125,9 @@
         const expenseTotalDisplay = document.getElementById('expense-total');
         const balanceDisplay = document.getElementById('balance');
         const downloadButton = document.getElementById('download-button');
-        const filterButton = document.getElementById('filter-button');
 
         let transactions = [];
-        const labels = [];
-        const incomeData = [];
-        const expenseData = [];
-        const balanceData = [];
-
+        
         function populateDateSelectors() {
             const yearSelect = document.getElementById('year');
             const monthSelect = document.getElementById('month');
@@ -184,57 +179,7 @@
             incomeTotalDisplay.textContent = 'Rp 0';
             expenseTotalDisplay.textContent = 'Rp 0';
             balanceDisplay.textContent = 'Rp 0';
-
-            labels.length = 0;
-            incomeData.length = 0;
-            expenseData.length = 0;
-            balanceData.length = 0;
         }
-
-        const ctx = document.getElementById('myChart').getContext('2d');
-        const myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Pemasukan',
-                        data: incomeData,
-                        borderColor: 'green',
-                        fill: false,
-                    },
-                    {
-                        label: 'Pengeluaran',
-                        data: expenseData,
-                        borderColor: 'red',
-                        fill: false,
-                    },
-                    {
-                        label: 'Saldo',
-                        data: balanceData,
-                        borderColor: 'blue',
-                        fill: false,
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Waktu'
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Jumlah (Rp)'
-                        }
-                    }
-                }
-            }
-        });
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
