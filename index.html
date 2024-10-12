@@ -42,6 +42,7 @@
                     <th>Jumlah</th>
                     <th>Tipe</th>
                     <th>Waktu</th>
+                    <th>Saldo</th> <!-- Menambahkan kolom saldo -->
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -228,11 +229,20 @@
                 second: '2-digit'
             });
 
+            // Hitung saldo saat ini berdasarkan transaksi yang ada
+            const currentBalance = transactions
+                .filter(t => t.type === 'income')
+                .reduce((acc, t) => acc + t.amount, 0) - 
+                transactions
+                .filter(t => t.type === 'expense')
+                .reduce((acc, t) => acc + t.amount, 0);
+
             row.innerHTML = `
                 <td>${transaction.description}</td>
                 <td>Rp ${transaction.amount}</td>
                 <td>${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td>
                 <td>${formattedDate}</td> <!-- Menampilkan waktu transaksi -->
+                <td>Rp ${currentBalance}</td> <!-- Menampilkan saldo saat ini -->
                 <td><button onclick="removeTransaction('${transaction.id}')">Hapus</button></td>
             `;
             transactionTable.appendChild(row);
