@@ -297,13 +297,9 @@
 
 
 
-
 // Update transaction table
 const updateTable = () => {
     transactionTable.innerHTML = ''; // Kosongkan tabel sebelum diisi
-
-    let incomeTotal = 0;
-    let expenseTotal = 0;
 
     transactions.forEach(transaction => {
         const row = transactionTable.insertRow();
@@ -332,18 +328,13 @@ const updateTable = () => {
         const balanceCell = row.insertCell(4);
         balanceCell.textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
         
-        // Action cell (tombol hapus tidak ditampilkan)
+        // Action cell (tidak ada tombol)
         const actionCell = row.insertCell(5);
-        actionCell.innerHTML = ''; // Tidak ada tombol di sini
+        actionCell.innerHTML = ''; // Kosongkan cell aksi
     });
 
-    const balance = incomeTotal - expenseTotal;
-    incomeTotalDisplay.textContent = `Rp ${incomeTotal.toLocaleString()}`;
-    expenseTotalDisplay.textContent = `Rp ${expenseTotal.toLocaleString()}`;
-    balanceDisplay.textContent = `Rp ${balance.toLocaleString()}`;
-
-    // Perbarui grafik
-    updateChart();
+    // Update balance display (optional)
+    updateBalanceDisplay();
 };
 
 // Function to edit cell content
@@ -369,20 +360,20 @@ function editCell(cell, transactionKey, field) {
         const newValue = input.value;
         if (newValue !== originalValue) {
             updateTransaction(transactionKey, field, newValue);
+            // Update cell content after saving
+            if (field === 'amount') {
+                cell.textContent = `Rp ${parseFloat(newValue).toLocaleString()}`; // format amount
+            } else if (field === 'timestamp') {
+                const newTimestamp = new Date(newValue).getTime(); // Mengubah ke timestamp
+                cell.textContent = new Date(newTimestamp).toLocaleString();
+            } else {
+                cell.textContent = newValue;
+            }
         }
 
-        // Format kembali value yang ditampilkan
-        if (field === 'amount') {
-            cell.textContent = `Rp ${parseFloat(newValue).toLocaleString()}`; // format amount
-        } else if (field === 'timestamp') {
-            const newTimestamp = new Date(newValue).getTime(); // Mengubah ke timestamp
-            cell.textContent = new Date(newTimestamp).toLocaleString();
-        } else {
-            cell.textContent = newValue;
-        }
-
-        // Hapus tombol Simpan setelah disimpan
-        cell.innerHTML = cell.textContent; // Kembalikan text yang ditampilkan
+        // Kosongkan cell aksi setelah disimpan
+        const actionCell = cell.parentNode.cells[5]; // Mendapatkan cell aksi
+        actionCell.innerHTML = ''; // Hapus tombol simpan
     };
 
     // Tambahkan tombol Simpan di kolom aksi
@@ -399,7 +390,19 @@ function updateTransaction(key, field, newValue) {
     } else if (field === 'timestamp') {
         newValue = new Date(newValue).getTime(); // Mengubah ke timestamp
     }
-    update(transactionRef, { [field]: newValue });
+    update(transactionRef, { [field]: newValue })
+        .then(() => {
+            console.log('Transaction updated successfully');
+            // Update data di local transactions array
+            const transactionIndex = transactions.findIndex(t => t.key === key);
+            if (transactionIndex > -1) {
+                transactions[transactionIndex][field] = newValue;
+            }
+            updateTable(); // Perbarui tabel setelah perubahan
+        })
+        .catch(error => {
+            console.error('Error updating transaction: ', error);
+        });
 }
 
 
