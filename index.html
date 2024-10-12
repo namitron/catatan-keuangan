@@ -45,6 +45,14 @@
             padding: 2px 5px;
             cursor: pointer;
         }
+
+        /* Gaya untuk tombol simpan */
+        .save-button {
+            font-size: 8px;
+            padding: 2px 5px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -247,12 +255,10 @@
             const description = document.getElementById('description').value;
             const amount = parseFloat(document.getElementById('amount').value);
             const type = document.getElementById('type').value;
-            const timestamp = new Date().toISOString();
+            const timestamp = Date.now();
 
-            const transaction = { description, amount, type, timestamp };
-            const transactionRef = ref(database, 'transactions');
-            push(transactionRef, transaction);
-            form.reset();
+            push(ref(database, 'transactions'), { description, amount, type, timestamp });
+            form.reset(); 
         });
 
         const fetchTransactions = () => {
@@ -302,8 +308,16 @@
                             cell.innerHTML = `<input type="text" value="${originalValue}" />`;
                             const input = cell.querySelector('input');
 
-                            input.onblur = () => {
+                            // Create save button
+                            const saveButton = document.createElement('button');
+                            saveButton.textContent = 'Simpan';
+                            saveButton.className = 'save-button';
+                            deleteCell.appendChild(saveButton);
+
+                            saveButton.onclick = (event) => {
+                                event.stopPropagation(); // Prevent row click event
                                 const newValue = input.value;
+
                                 if (cellIndex === 0) { // Deskripsi
                                     const id = childSnapshot.key;
                                     const transactionRef = ref(database, `transactions/${id}`);
@@ -314,7 +328,13 @@
                                     const transactionRef = ref(database, `transactions/${id}`);
                                     update(transactionRef, { amount: amountValue });
                                 }
-                                cell.textContent = newValue;
+                                cell.textContent = newValue; // Update cell display
+                                deleteCell.removeChild(saveButton); // Remove save button after saving
+                            };
+
+                            input.onblur = () => {
+                                cell.textContent = originalValue; // Revert to original if focus lost
+                                deleteCell.removeChild(saveButton); // Remove save button if focus lost
                             };
                         });
                     };
