@@ -412,6 +412,17 @@ filterButton.addEventListener('click', () => {
 
 
 
+// Fungsi untuk menghapus transaksi dari Firebase
+function deleteTransaction(key) {
+    const transactionRef = ref(database, 'transactions/' + key);
+    remove(transactionRef)
+        .then(() => {
+            console.log('Transaksi berhasil dihapus');
+        })
+        .catch((error) => {
+            console.error('Gagal menghapus transaksi:', error);
+        });
+}
 
 
 
