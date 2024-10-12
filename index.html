@@ -13,14 +13,14 @@
             margin: 0;
             padding: 0;
             height: 100%;
-            overflow: hidden; /* Mencegah scrollbar */
+            overflow-x: hidden; /* Mencegah scrollbar horizontal */
         }
         #canvas-bg {
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100%; /* Mengatur lebar canvas menjadi 100% */
+            height: 100%; /* Mengatur tinggi canvas menjadi 100% */
             z-index: -1; /* Menempatkan canvas di belakang konten */
         }
 
@@ -30,6 +30,8 @@
             padding: 20px;
             background-color: rgba(255, 255, 255, 0.8); /* Memberikan latar belakang putih transparan */
             border-radius: 10px; /* Menambahkan sudut melengkung */
+            max-width: 1200px; /* Menentukan lebar maksimum kontainer */
+            margin: auto; /* Mengatur margin agar kontainer berada di tengah */
         }
 
         /* Gaya untuk grafik */
@@ -43,6 +45,17 @@
         canvas {
             width: 100% !important; /* Membuat grafik responsif sesuai dengan lebar kontainer */
             height: 100% !important; /* Membuat grafik responsif sesuai dengan tinggi kontainer */
+        }
+
+        table {
+            width: 100%; /* Mengatur tabel agar lebar 100% dari kontainer */
+            border-collapse: collapse; /* Menghapus spasi antara sel tabel */
+        }
+
+        th, td {
+            border: 1px solid #ccc; /* Menambahkan border pada tabel */
+            padding: 8px; /* Menambahkan padding di dalam sel */
+            text-align: left; /* Mengatur teks di dalam sel ke kiri */
         }
     </style>
 </head>
@@ -223,20 +236,14 @@
           balanceDisplay.textContent = `Rp ${balance}`;
       }
 
-      // Download transactions as Excel file
-      downloadButton.addEventListener('click', () => {
+      // Download data to Excel
+      downloadButton.addEventListener('click', function() {
           const data = transactions.map(transaction => ({
               Deskripsi: transaction.description,
               Jumlah: transaction.amount,
               Tipe: transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
-              Waktu: new Date(transaction.timestamp).toLocaleString('id-ID', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-              }),
+              Waktu: new Date(transaction.timestamp).toLocaleString('id-ID'),
+              Saldo: calculateBalance(transaction.id) // Menambahkan saldo ke data
           }));
 
           const worksheet = XLSX.utils.json_to_sheet(data);
