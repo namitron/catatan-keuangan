@@ -341,23 +341,58 @@
             return balance;
         }
 
+        
         // Update chart with transaction data
-        function updateChart() {
-            labels.length = 0;
-            incomeData.length = 0;
-            expenseData.length = 0;
-            balanceData.length = 0;
-
-            transactions.forEach(transaction => {
-                labels.push(new Date(transaction.timestamp).toLocaleString());
-                incomeData.push(transaction.type === 'income' ? transaction.amount : 0);
-                expenseData.push(transaction.type === 'expense' ? transaction.amount : 0);
-                balanceData.push(calculateBalance(transaction));
+        function updateChart(transactionsToUpdate) {
+            const chartData = {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Pemasukan',
+                        data: [],
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Pengeluaran',
+                        data: [],
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            };
+        
+            transactionsToUpdate.forEach(transaction => {
+                const transactionDate = new Date(transaction.timestamp).toLocaleDateString();
+                const index = chartData.labels.indexOf(transactionDate);
+        
+                if (index === -1) {
+                    chartData.labels.push(transactionDate);
+                    chartData.datasets[0].data.push(transaction.type === 'income' ? transaction.amount : 0);
+                    chartData.datasets[1].data.push(transaction.type === 'expense' ? transaction.amount : 0);
+                } else {
+                    if (transaction.type === 'income') {
+                        chartData.datasets[0].data[index] += transaction.amount;
+                    } else {
+                        chartData.datasets[1].data[index] += transaction.amount;
+                    }
+                }
             });
-
-            myChart.update(); // Perbarui grafik
+        
+            // Update chart with new data
+            myChart.data.labels = chartData.labels;
+            myChart.data.datasets[0].data = chartData.datasets[0].data;
+            myChart.data.datasets[1].data = chartData.datasets[1].data;
+            myChart.update();
         }
 
+
+
+
+
+        
         // Delete transaction
         function deleteTransaction(key) {
             const transactionRef = ref(database, `transactions/${key}`);
@@ -373,7 +408,7 @@
         });
 
     // Filter transactions by selected date
-    filterButton.addEventListener('click', () => {
+filterButton.addEventListener('click', () => {
     const year = document.getElementById('year').value;
     const month = document.getElementById('month').value;
     const week = document.getElementById('week').value;
@@ -418,8 +453,18 @@
 
     // Update totals
     updateTotals(filteredTransactions);
-    });
 
+    // Update the chart with filtered transactions
+    updateChart(filteredTransactions);
+});
+
+
+
+
+
+
+
+        
 
 
         // Call functions to initialize app
