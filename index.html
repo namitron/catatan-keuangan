@@ -309,15 +309,25 @@ const updateTable = () => {
         const descriptionCell = row.insertCell(0);
         descriptionCell.textContent = transaction.description;
         descriptionCell.onclick = () => editCell(descriptionCell, transaction.key, 'description');
-        
+
         // Editable amount cell
         const amountCell = row.insertCell(1);
         amountCell.textContent = `Rp ${transaction.amount.toLocaleString()}`;
         amountCell.onclick = () => editCell(amountCell, transaction.key, 'amount');
-        
-        row.insertCell(2).textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
-        row.insertCell(3).textContent = new Date(transaction.timestamp).toLocaleString();
-        row.insertCell(4).textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
+
+        // Editable type cell
+        const typeCell = row.insertCell(2);
+        typeCell.textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
+        typeCell.onclick = () => editCell(typeCell, transaction.key, 'type');
+
+        // Editable timestamp cell
+        const timestampCell = row.insertCell(3);
+        timestampCell.textContent = new Date(transaction.timestamp).toLocaleString();
+        timestampCell.onclick = () => editCell(timestampCell, transaction.key, 'timestamp');
+
+        // Editable balance cell
+        const balanceCell = row.insertCell(4);
+        balanceCell.textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
         
         const deleteButton = row.insertCell(5).appendChild(document.createElement('button'));
         deleteButton.textContent = 'Hapus';
@@ -341,12 +351,18 @@ const updateTable = () => {
     updateChart();
 };
 
-
 // Function to edit cell content
 function editCell(cell, transactionKey, field) {
     const originalValue = cell.textContent.trim();
     const input = document.createElement('input');
-    input.value = field === 'amount' ? originalValue.replace('Rp ', '').replace('.', '').replace(',', '') : originalValue; // format amount
+    
+    // Format input untuk amount
+    if (field === 'amount') {
+        input.value = originalValue.replace('Rp ', '').replace('.', '').replace(',', '');
+    } else {
+        input.value = originalValue;
+    }
+    
     cell.innerHTML = '';
     cell.appendChild(input);
     input.focus();
@@ -356,20 +372,30 @@ function editCell(cell, transactionKey, field) {
         if (newValue !== originalValue) {
             updateTransaction(transactionKey, field, newValue);
         }
-        cell.textContent = field === 'amount' ? `Rp ${parseFloat(newValue).toLocaleString()}` : newValue; // format amount
+
+        // Format kembali value yang ditampilkan
+        if (field === 'amount') {
+            cell.textContent = `Rp ${parseFloat(newValue).toLocaleString()}`; // format amount
+        } else if (field === 'timestamp') {
+            const newTimestamp = new Date(newValue).getTime(); // Mengubah ke timestamp
+            cell.textContent = new Date(newTimestamp).toLocaleString();
+        } else {
+            cell.textContent = newValue;
+        }
     };
 }
-
-
 
 // Function to update transaction in Firebase
 function updateTransaction(key, field, newValue) {
     const transactionRef = ref(database, 'transactions/' + key);
     if (field === 'amount') {
         newValue = parseFloat(newValue);
+    } else if (field === 'timestamp') {
+        newValue = new Date(newValue).getTime(); // Mengubah ke timestamp
     }
     update(transactionRef, { [field]: newValue });
 }
+
 
 
 
