@@ -394,6 +394,8 @@ function updateTransaction(key, field, newValue) {
         updatedValue = new Date(newValue).getTime(); // Mengubah ke timestamp
     }
 
+    console.log(`Updating transaction: ${key}, Field: ${field}, New Value: ${updatedValue}`); // Log untuk debugging
+
     update(transactionRef, { [field]: updatedValue })
         .then(() => {
             console.log('Transaction updated successfully');
@@ -408,6 +410,7 @@ function updateTransaction(key, field, newValue) {
             console.error('Error updating transaction: ', error);
         });
 }
+
 
 // Function to delete transaction
 function deleteTransaction(key) {
