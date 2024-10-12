@@ -112,7 +112,7 @@
     <script type="module">
         // Import Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+        import { getDatabase, ref, push, onValue, remove, set } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
         // Firebase configuration
         const firebaseConfig = {
@@ -139,6 +139,7 @@
         const filterButton = document.getElementById('filter-button');
 
         let transactions = [];
+        let editingKey = null; // Simpan kunci transaksi yang sedang diedit
         const labels = [];
         const incomeData = [];
         const expenseData = [];
@@ -210,12 +211,9 @@
             incomeData.length = 0;
             expenseData.length = 0;
             balanceData.length = 0;
-
-            // Memperbarui grafik
-            myChart.update(); // Perbarui grafik
         }
 
-        // Chart.js setup
+        // Initialize chart
         const ctx = document.getElementById('myChart').getContext('2d');
         const myChart = new Chart(ctx, {
             type: 'line',
@@ -346,10 +344,13 @@
             document.getElementById('amount').value = transaction.amount;
             document.getElementById('type').value = transaction.type;
 
-            // Hapus transaksi lama dan simpan kunci untuk pengeditan
+            // Simpan kunci transaksi yang sedang diedit
+            editingKey = transaction.key;
+
+            // Ubah perilaku form untuk memperbarui transaksi
             form.onsubmit = (e) => {
                 e.preventDefault();
-                updateTransaction(transaction.key);
+                updateTransaction(editingKey);
             };
         }
 
@@ -363,6 +364,7 @@
             const transactionRef = ref(database, `transactions/${key}`);
             set(transactionRef, updatedTransaction).then(() => {
                 form.reset(); // Reset form setelah pembaruan
+                editingKey = null; // Reset kunci edit
                 fetchTransactions(); // Ambil data terbaru
             }).catch(error => {
                 console.error('Error updating transaction: ', error);
@@ -387,11 +389,16 @@
             const type = document.getElementById('type').value;
             const newTransaction = { description, amount, type, timestamp: new Date().toISOString() };
 
-            push(ref(database, 'transactions'), newTransaction).then(() => {
-                form.reset(); // Reset form setelah penambahan
-            }).catch(error => {
-                console.error('Error adding transaction: ', error);
-            });
+            // Jika sedang dalam mode edit, update transaksi
+            if (editingKey) {
+                updateTransaction(editingKey);
+            } else {
+                push(ref(database, 'transactions'), newTransaction).then(() => {
+                    form.reset(); // Reset form setelah penambahan
+                }).catch(error => {
+                    console.error('Error adding transaction: ', error);
+                });
+            }
         };
 
         // Download transactions as Excel
