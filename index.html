@@ -6,7 +6,7 @@
     <title>Catatan Keuangan</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Menambahkan Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Gaya untuk grafik */
         #chart-container {
@@ -18,6 +18,23 @@
         canvas {
             max-width: 100%; /* Membuat grafik responsif */
             height: 400px; /* Tinggi grafik */
+        }
+
+        /* Gaya untuk tabel */
+        table {
+            width: 100%; /* Membuat tabel memenuhi lebar container */
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
         }
     </style>
 </head>
@@ -42,7 +59,7 @@
                     <th>Jumlah</th>
                     <th>Tipe</th>
                     <th>Waktu</th>
-                    <th>Saldo</th> <!-- Menambahkan kolom saldo -->
+                    <th>Saldo</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -59,7 +76,6 @@
 
         <button id="download-button">Unduh Excel</button>
         
-        <!-- Menambahkan container untuk grafik -->
         <div id="chart-container">
             <canvas id="myChart"></canvas>
         </div>
@@ -94,10 +110,10 @@
         const downloadButton = document.getElementById('download-button');
 
         let transactions = [];
-        const labels = []; // Untuk label waktu
-        const incomeData = []; // Untuk data pemasukan
-        const expenseData = []; // Untuk data pengeluaran
-        const balanceData = []; // Untuk data saldo
+        const labels = [];
+        const incomeData = [];
+        const expenseData = [];
+        const balanceData = [];
 
         // Chart.js setup
         const ctx = document.getElementById('myChart').getContext('2d');
@@ -140,13 +156,13 @@
             const data = snapshot.val();
             transactions = [];
             transactionTable.innerHTML = '';
-            labels.length = 0; // Mengosongkan labels
-            incomeData.length = 0; // Mengosongkan data pemasukan
-            expenseData.length = 0; // Mengosongkan data pengeluaran
-            balanceData.length = 0; // Mengosongkan data saldo
+            labels.length = 0;
+            incomeData.length = 0;
+            expenseData.length = 0;
+            balanceData.length = 0;
 
-            let totalIncome = 0; // Total pemasukan
-            let totalExpense = 0; // Total pengeluaran
+            let totalIncome = 0;
+            let totalExpense = 0;
 
             for (let key in data) {
                 const transaction = data[key];
@@ -163,25 +179,27 @@
                     second: '2-digit'
                 });
 
-                // Menambahkan label dan data ke grafik
                 labels.push(formattedDate);
                 if (transaction.type === 'income') {
                     totalIncome += transaction.amount;
                     incomeData.push(transaction.amount);
-                    expenseData.push(0); // Tambahkan 0 untuk pengeluaran
+                    expenseData.push(0);
                 } else {
                     totalExpense += transaction.amount;
-                    incomeData.push(0); // Tambahkan 0 untuk pemasukan
+                    incomeData.push(0);
                     expenseData.push(transaction.amount);
                 }
 
-                // Hitung saldo dan simpan di balanceData
                 const currentBalance = totalIncome - totalExpense;
                 balanceData.push(currentBalance);
             }
 
             updateSummary();
-            myChart.update(); // Memperbarui grafik
+            myChart.data.labels = labels;
+            myChart.data.datasets[0].data = incomeData;
+            myChart.data.datasets[1].data = expenseData;
+            myChart.data.datasets[2].data = balanceData;
+            myChart.update();
         });
 
         // Add new transaction
@@ -202,14 +220,14 @@
                 description,
                 amount,
                 type,
-                timestamp: Date.now() // Menyimpan waktu transaksi
+                timestamp: Date.now()
             };
 
             // Push transaction to Firebase
             push(ref(database, 'transactions'), transaction)
                 .then(() => {
                     console.log('Transaksi berhasil ditambahkan');
-                    form.reset(); // Reset form setelah berhasil
+                    form.reset();
                 })
                 .catch((error) => {
                     console.error('Error menambahkan transaksi:', error);
@@ -219,8 +237,8 @@
         // Display transaction in table
         function displayTransaction(transaction) {
             const row = document.createElement('tr');
-            const date = new Date(transaction.timestamp); // Mengonversi timestamp menjadi objek Date
-            const formattedDate = date.toLocaleString('id-ID', { // Format tanggal dan waktu
+            const date = new Date(transaction.timestamp);
+            const formattedDate = date.toLocaleString('id-ID', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
@@ -229,7 +247,6 @@
                 second: '2-digit'
             });
 
-            // Hitung saldo saat ini berdasarkan transaksi yang ada
             const currentBalance = transactions
                 .filter(t => t.type === 'income')
                 .reduce((acc, t) => acc + t.amount, 0) - 
@@ -241,8 +258,8 @@
                 <td>${transaction.description}</td>
                 <td>Rp ${transaction.amount}</td>
                 <td>${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td>
-                <td>${formattedDate}</td> <!-- Menampilkan waktu transaksi -->
-                <td>Rp ${currentBalance}</td> <!-- Menampilkan saldo saat ini -->
+                <td>${formattedDate}</td>
+                <td>Rp ${currentBalance}</td>
                 <td><button onclick="removeTransaction('${transaction.id}')">Hapus</button></td>
             `;
             transactionTable.appendChild(row);
@@ -258,11 +275,9 @@
             const incomeTotal = transactions
                 .filter(transaction => transaction.type === 'income')
                 .reduce((acc, transaction) => acc + transaction.amount, 0);
-
             const expenseTotal = transactions
                 .filter(transaction => transaction.type === 'expense')
                 .reduce((acc, transaction) => acc + transaction.amount, 0);
-
             const balance = incomeTotal - expenseTotal;
 
             incomeTotalDisplay.textContent = `Rp ${incomeTotal}`;
@@ -270,30 +285,13 @@
             balanceDisplay.textContent = `Rp ${balance}`;
         }
 
-        // Download transactions as Excel file
+        // Download transactions as Excel
         downloadButton.addEventListener('click', () => {
-            const data = transactions.map(transaction => ({
-                Deskripsi: transaction.description,
-                Jumlah: transaction.amount,
-                Tipe: transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
-                Waktu: new Date(transaction.timestamp).toLocaleString('id-ID', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                })
-            }));
-            downloadExcel(data);
+            const worksheet = XLSX.utils.json_to_sheet(transactions);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Transaksi');
+            XLSX.writeFile(workbook, 'transaksi.xlsx');
         });
-
-        function downloadExcel(data) {
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Catatan Keuangan");
-            XLSX.writeFile(wb, "catatan_keuangan.xlsx");
-        }
     </script>
 </body>
 </html>
