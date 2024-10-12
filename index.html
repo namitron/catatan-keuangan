@@ -3,194 +3,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Catatan Keuangan</title>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
+    <title>Catatan Keuangan</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Gaya CSS untuk tampilan aplikasi */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+        /* Gaya untuk grafik */
+        #chart-container {
+            width: 80%;
+            margin: auto;
+            padding-top: 20px;
         }
+
+        canvas {
+            max-width: 100%;
+            height: 400px;
+        }
+
+        /* Gaya untuk tabel */
         table {
             width: 100%;
+            max-width: 500px;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-bottom: 20px;
+            font-size: 9px;
         }
+
         th, td {
-            padding: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 6px;
         }
+
         th {
-            background-color: #f4f4f4;
+            background-color: #f2f2f2;
         }
-        button {
-            margin: 5px;
+
+        /* Gaya untuk tombol hapus */
+        .delete-button {
+            font-size: 8px;
+            padding: 2px 5px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <h1>Aplikasi Catatan Keuangan</h1>
-    <form id="transactionForm">
-        <label for="description">Deskripsi:</label>
-        <input type="text" id="description" required>
-        <label for="amount">Jumlah:</label>
-        <input type="number" id="amount" required>
-        <label for="type">Tipe:</label>
-        <select id="type">
-            <option value="expense">Pengeluaran</option>
-            <option value="income">Pemasukan</option>
-        </select>
-        <button type="submit">Tambah Transaksi</button>
-    </form>
-    <h2>Total Pemasukan: <span id="incomeTotal">Rp 0</span></h2>
-    <h2>Total Pengeluaran: <span id="expenseTotal">Rp 0</span></h2>
-    <h2>Saldo: <span id="balance">Rp 0</span></h2>
-
-    <table id="transactionTable">
-        <thead>
-            <tr>
-                <th>Deskripsi</th>
-                <th>Jumlah</th>
-                <th>Tipe</th>
-                <th>Waktu</th>
-                <th>Saldo</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Transaksi akan ditambahkan di sini -->
-        </tbody>
-    </table>
-
-    <script>
-        // Konfigurasi Firebase
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+    <div class="container">
+        <h1>Catatan Keuangan</h1>
         
-        // Inisialisasi Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.getDatabase(app);
+        <form id="form">
+            <input type="text" id="description" placeholder="Deskripsi" required>
+            <input type="number" id="amount" placeholder="Jumlah" required>
+            <select id="type">
+                <option value="income">Pemasukan</option>
+                <option value="expense">Pengeluaran</option>
+            </select>
+            <button type="submit">Tambah</button>
+        </form>
 
-        const transactionForm = document.getElementById('transactionForm');
-        const transactionTable = document.getElementById('transactionTable').getElementsByTagName('tbody')[0];
-        const incomeTotalDisplay = document.getElementById('incomeTotal');
-        const expenseTotalDisplay = document.getElementById('expenseTotal');
+        <div>
+            <label for="year">Tahun:</label>
+            <select id="year"></select>
+            <label for="month">Bulan:</label>
+            <select id="month"></select>
+            <label for="week">Minggu:</label>
+            <select id="week"></select>
+            <button id="filter-button">Tampilkan Catatan</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Deskripsi</th>
+                    <th>Jumlah</th>
+                    <th>Tipe</th>
+                    <th>Waktu</th>
+                    <th>Saldo</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="transaction-table">
+            </tbody>
+        </table>
+
+        <div class="summary">
+            <h2>Ringkasan</h2>
+            <p>Pemasukan: <span id="income-total">Rp 0</span></p>
+            <p>Pengeluaran: <span id="expense-total">Rp 0</span></p>
+            <p>Saldo: <span id="balance">Rp 0</span></p>
+        </div>
+
+        <button id="download-button">Unduh Excel</button>
+        
+        <div id="chart-container">
+            <canvas id="myChart"></canvas>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBCKzM7sv0rfxIgiTvdehUq8uL_ad9_u-4",
+            authDomain: "catatan-b9f7c.firebaseapp.com",
+            databaseURL: "https://catatan-b9f7c-default-rtdb.firebaseio.com",
+            projectId: "catatan-b9f7c",
+            storageBucket: "catatan-b9f7c.appspot.com",
+            messagingSenderId: "1012027038485",
+            appId: "1:1012027038485:web:efe4484f7fb222742de71c"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // DOM Elements
+        const form = document.getElementById('form');
+        const transactionTable = document.getElementById('transaction-table');
+        const incomeTotalDisplay = document.getElementById('income-total');
+        const expenseTotalDisplay = document.getElementById('expense-total');
         const balanceDisplay = document.getElementById('balance');
+        const downloadButton = document.getElementById('download-button');
+        const filterButton = document.getElementById('filter-button');
 
         let transactions = [];
+        const labels = [];
+        const incomeData = [];
+        const expenseData = [];
+        const balanceData = [];
 
-        transactionForm.addEventListener('submit', (e) => {
+        function populateDateSelectors() {
+            const yearSelect = document.getElementById('year');
+            const monthSelect = document.getElementById('month');
+            const weekSelect = document.getElementById('week');
+            const currentDate = new Date();
+            const currentYear = currentDate.getFullYear();
+            const currentMonth = currentDate.getMonth() + 1; 
+            const currentWeek = Math.ceil((currentDate.getDate() + 1) / 7); 
+
+            for (let i = currentYear - 5; i <= currentYear; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                yearSelect.appendChild(option);
+            }
+            yearSelect.value = currentYear; 
+
+            const months = [
+                "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+            ];
+            for (let i = 0; i < months.length; i++) {
+                const option = document.createElement('option');
+                option.value = i + 1; 
+                option.textContent = months[i];
+                monthSelect.appendChild(option);
+            }
+            monthSelect.value = currentMonth; 
+
+            for (let i = 1; i <= 4; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Minggu ${i}`;
+                weekSelect.appendChild(option);
+            }
+            weekSelect.value = Math.ceil((currentDate.getDate() + 1) / 7); 
+        }
+
+        function initializeDefaultValues() {
+            transactionTable.innerHTML = ''; 
+
+            const row = transactionTable.insertRow();
+            row.insertCell(0).textContent = 'Tidak ada data';
+            row.insertCell(1).textContent = 'Rp 0';
+            row.insertCell(2).textContent = '-';
+            row.insertCell(3).textContent = '-';
+            row.insertCell(4).textContent = 'Rp 0';
+            row.insertCell(5).innerHTML = '<button class="delete-button" disabled>Hapus</button>';
+
+            incomeTotalDisplay.textContent = 'Rp 0';
+            expenseTotalDisplay.textContent = 'Rp 0';
+            balanceDisplay.textContent = 'Rp 0';
+
+            labels.length = 0;
+            incomeData.length = 0;
+            expenseData.length = 0;
+            balanceData.length = 0;
+
+            myChart.update(); 
+        }
+
+        const ctx = document.getElementById('myChart').getContext('2d');
+        const myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Pemasukan',
+                        data: incomeData,
+                        borderColor: 'green',
+                        fill: false,
+                    },
+                    {
+                        label: 'Pengeluaran',
+                        data: expenseData,
+                        borderColor: 'red',
+                        fill: false,
+                    },
+                    {
+                        label: 'Saldo',
+                        data: balanceData,
+                        borderColor: 'blue',
+                        fill: false,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Waktu'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Jumlah (Rp)'
+                        }
+                    }
+                }
+            }
+        });
+
+        form.addEventListener('submit', (e) => {
             e.preventDefault();
+
             const description = document.getElementById('description').value;
             const amount = parseFloat(document.getElementById('amount').value);
             const type = document.getElementById('type').value;
-            const timestamp = Date.now();
+            const timestamp = new Date().toISOString();
 
             const transaction = { description, amount, type, timestamp };
-            saveTransaction(transaction);
-            transactionForm.reset();
+            const transactionRef = ref(database, 'transactions');
+            push(transactionRef, transaction);
+            form.reset();
         });
 
-        const saveTransaction = (transaction) => {
-            const transactionRef = firebase.ref(database, 'transactions/' + Date.now());
-            firebase.set(transactionRef, transaction);
-        };
-
         const fetchTransactions = () => {
-            const transactionsRef = firebase.ref(database, 'transactions/');
-            firebase.onValue(transactionsRef, (snapshot) => {
+            const transactionRef = ref(database, 'transactions');
+            onValue(transactionRef, (snapshot) => {
                 transactions = [];
+                transactionTable.innerHTML = ''; 
+
+                let incomeTotal = 0;
+                let expenseTotal = 0;
+
                 snapshot.forEach((childSnapshot) => {
-                    const data = childSnapshot.val();
-                    data.key = childSnapshot.key;
-                    transactions.push(data);
+                    const transaction = childSnapshot.val();
+                    transactions.push({ id: childSnapshot.key, ...transaction });
+
+                    if (transaction.type === 'income') {
+                        incomeTotal += transaction.amount;
+                        incomeData.push(transaction.amount);
+                    } else {
+                        expenseTotal += transaction.amount;
+                        expenseData.push(transaction.amount);
+                    }
+
+                    const row = transactionTable.insertRow();
+                    row.insertCell(0).textContent = transaction.description;
+                    row.insertCell(1).textContent = transaction.amount.toFixed(2);
+                    row.insertCell(2).textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
+                    row.insertCell(3).textContent = new Date(transaction.timestamp).toLocaleString();
+                    row.insertCell(4).textContent = (incomeTotal - expenseTotal).toFixed(2);
+                    const deleteCell = row.insertCell(5);
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Hapus';
+                    deleteButton.className = 'delete-button';
+                    deleteButton.onclick = () => {
+                        const id = childSnapshot.key;
+                        const transactionRef = ref(database, `transactions/${id}`);
+                        remove(transactionRef);
+                    };
+                    deleteCell.appendChild(deleteButton);
+
+                    // Enable editing on click
+                    row.onclick = () => {
+                        const editableCells = [0, 1];
+                        editableCells.forEach(cellIndex => {
+                            const cell = row.cells[cellIndex];
+                            const originalValue = cell.textContent;
+                            cell.innerHTML = `<input type="text" value="${originalValue}" />`;
+                            const input = cell.querySelector('input');
+
+                            input.onblur = () => {
+                                const newValue = input.value;
+                                if (cellIndex === 0) { // Deskripsi
+                                    const id = childSnapshot.key;
+                                    const transactionRef = ref(database, `transactions/${id}`);
+                                    update(transactionRef, { description: newValue });
+                                } else if (cellIndex === 1) { // Jumlah
+                                    const amountValue = parseFloat(newValue);
+                                    const id = childSnapshot.key;
+                                    const transactionRef = ref(database, `transactions/${id}`);
+                                    update(transactionRef, { amount: amountValue });
+                                }
+                                cell.textContent = newValue;
+                            };
+                        });
+                    };
                 });
-                updateTable();
+
+                incomeTotalDisplay.textContent = `Rp ${incomeTotal.toFixed(2)}`;
+                expenseTotalDisplay.textContent = `Rp ${expenseTotal.toFixed(2)}`;
+                balanceDisplay.textContent = `Rp ${(incomeTotal - expenseTotal).toFixed(2)}`;
+
+                myChart.data.labels = transactions.map(t => new Date(t.timestamp).toLocaleString());
+                myChart.update();
             });
         };
 
-        const updateTable = () => {
-            transactionTable.innerHTML = ''; 
+        downloadButton.addEventListener('click', () => {
+            const ws = XLSX.utils.json_to_sheet(transactions);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
+            XLSX.writeFile(wb, "Catatan_Keuangan.xlsx");
+        });
 
-            let incomeTotal = 0;
-            let expenseTotal = 0;
-
-            transactions.forEach(transaction => {
-                const row = transactionTable.insertRow();
-                
-                // Deskripsi
-                const descriptionCell = row.insertCell(0);
-                const descriptionInput = document.createElement('input');
-                descriptionInput.value = transaction.description;
-                descriptionInput.onblur = () => updateTransaction(transaction.key, { ...transaction, description: descriptionInput.value });
-                descriptionCell.appendChild(descriptionInput);
-
-                // Jumlah
-                const amountCell = row.insertCell(1);
-                const amountInput = document.createElement('input');
-                amountInput.type = 'number';
-                amountInput.value = transaction.amount;
-                amountInput.onblur = () => updateTransaction(transaction.key, { ...transaction, amount: parseFloat(amountInput.value) });
-                amountCell.appendChild(amountInput);
-
-                // Tipe
-                const typeCell = row.insertCell(2);
-                typeCell.textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
-
-                // Waktu
-                const timeCell = row.insertCell(3);
-                timeCell.textContent = new Date(transaction.timestamp).toLocaleString();
-
-                // Saldo
-                const balanceCell = row.insertCell(4);
-                balanceCell.textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
-
-                // Aksi
-                const actionCell = row.insertCell(5);
-                const deleteButton = actionCell.appendChild(document.createElement('button'));
-                deleteButton.textContent = 'Hapus';
-                deleteButton.className = 'delete-button';
-                deleteButton.onclick = () => deleteTransaction(transaction.key);
-
-                if (transaction.type === 'income') {
-                    incomeTotal += transaction.amount;
-                } else {
-                    expenseTotal += transaction.amount;
-                }
-            });
-
-            const balance = incomeTotal - expenseTotal;
-            incomeTotalDisplay.textContent = `Rp ${incomeTotal.toLocaleString()}`;
-            expenseTotalDisplay.textContent = `Rp ${expenseTotal.toLocaleString()}`;
-            balanceDisplay.textContent = `Rp ${balance.toLocaleString()}`;
+        window.onload = () => {
+            populateDateSelectors();
+            fetchTransactions();
+            initializeDefaultValues();
         };
-
-        const updateTransaction = (key, updatedTransaction) => {
-            const transactionRef = firebase.ref(database, `transactions/${key}`);
-            firebase.set(transactionRef, updatedTransaction);
-        };
-
-        const deleteTransaction = (key) => {
-            const transactionRef = firebase.ref(database, `transactions/${key}`);
-            firebase.remove(transactionRef);
-        };
-
-        const calculateBalance = (transaction) => {
-            return transactions.reduce((total, trans) => {
-                return trans.type === 'income' ? total + trans.amount : total - trans.amount;
-            }, 0);
-        };
-
-        // Ambil transaksi saat halaman dimuat
-        window.onload = fetchTransactions;
     </script>
 </body>
 </html>
