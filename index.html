@@ -391,24 +391,56 @@ function updateTransaction(key, field, newValue) {
     if (field === 'amount') {
         updatedValue = parseFloat(newValue);
     } else if (field === 'timestamp') {
-        updatedValue = new Date(newValue).getTime(); // Mengubah ke timestamp
+        updatedValue = new Date(newValue).getTime(); // Convert to timestamp
     }
 
-    console.log(`Updating transaction: ${key}, Field: ${field}, New Value: ${updatedValue}`); // Log untuk debugging
+    console.log(`Updating transaction: ${key}, Field: ${field}, New Value: ${updatedValue}`); // Log for debugging
 
     update(transactionRef, { [field]: updatedValue })
         .then(() => {
             console.log('Transaction updated successfully');
-            // Update data di local transactions array
+            // Update data in local transactions array
             const transactionIndex = transactions.findIndex(t => t.key === key);
             if (transactionIndex > -1) {
                 transactions[transactionIndex][field] = updatedValue;
             }
-            updateTable(); // Perbarui tabel setelah perubahan
+
+            // Call the function to refresh the table after update
+            updateTable(); // Function to refresh the table
         })
         .catch(error => {
             console.error('Error updating transaction: ', error);
         });
+}
+
+// Function to update the table in the UI
+function updateTable() {
+    // Clear existing table rows
+    const tableBody = document.getElementById('transaction-table-body');
+    tableBody.innerHTML = '';
+
+    // Iterate through the transactions and append them to the table
+    transactions.forEach(transaction => {
+        const row = document.createElement('tr');
+        
+        // Create cells for each property
+        const amountCell = document.createElement('td');
+        amountCell.textContent = transaction.amount;
+        row.appendChild(amountCell);
+        
+        const timestampCell = document.createElement('td');
+        timestampCell.textContent = new Date(transaction.timestamp).toLocaleString(); // Format timestamp
+        row.appendChild(timestampCell);
+        
+        const actionCell = document.createElement('td');
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Hapus';
+        deleteButton.onclick = () => deleteTransaction(transaction.key); // Assign delete function
+        actionCell.appendChild(deleteButton);
+        
+        row.appendChild(actionCell);
+        tableBody.appendChild(row);
+    });
 }
 
 
