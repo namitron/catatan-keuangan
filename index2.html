@@ -372,8 +372,13 @@
             XLSX.writeFile(wb, 'transactions.xlsx');
         });
 
+
+
+
+
+        
     // Filter transactions by selected date
-    filterButton.addEventListener('click', () => {
+filterButton.addEventListener('click', () => {
     const year = document.getElementById('year').value;
     const month = document.getElementById('month').value;
     const week = document.getElementById('week').value;
@@ -414,14 +419,21 @@
             deleteButton.className = 'delete-button';
             deleteButton.onclick = () => deleteTransaction(transaction.key);
         });
+
+        // Update totals
+        updateTotals(filteredTransactions);
     }
-
-    // Update totals
-    updateTotals(filteredTransactions);
-    });
+});
 
 
 
+
+
+
+
+
+
+        
         // Call functions to initialize app
         populateDateSelectors();
         initializeDefaultValues();
