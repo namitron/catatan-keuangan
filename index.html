@@ -54,14 +54,12 @@
             <button type="submit">Tambah</button>
         </form>
 
-        <!-- Pilihan untuk memilih tanggal -->
+        <!-- Pilihan untuk memilih tahun dan minggu -->
         <div>
             <label for="year">Tahun:</label>
             <select id="year"></select>
-            <label for="month">Bulan:</label>
-            <select id="month"></select>
-            <label for="day">Hari:</label>
-            <select id="day"></select>
+            <label for="week">Minggu:</label>
+            <select id="week"></select>
             <button id="filter-button">Tampilkan Catatan</button>
         </div>
 
@@ -129,14 +127,12 @@
         const expenseData = [];
         const balanceData = [];
 
-        // Populate year, month, and day select elements
+        // Populate year and week select elements
         function populateDateSelectors() {
             const yearSelect = document.getElementById('year');
-            const monthSelect = document.getElementById('month');
-            const daySelect = document.getElementById('day');
             const currentDate = new Date();
             const currentYear = currentDate.getFullYear();
-            
+
             // Populate year
             for (let i = currentYear - 5; i <= currentYear; i++) {
                 const option = document.createElement('option');
@@ -144,21 +140,15 @@
                 option.textContent = i;
                 yearSelect.appendChild(option);
             }
+        }
 
-            // Populate month
-            for (let i = 0; i < 12; i++) {
+        function populateWeekSelector() {
+            const weekSelect = document.getElementById('week');
+            for (let i = 1; i <= 52; i++) {
                 const option = document.createElement('option');
                 option.value = i;
-                option.textContent = new Date(0, i).toLocaleString('id-ID', { month: 'long' });
-                monthSelect.appendChild(option);
-            }
-
-            // Populate day (1-31)
-            for (let i = 1; i <= 31; i++) {
-                const option = document.createElement('option');
-                option.value = i;
-                option.textContent = i;
-                daySelect.appendChild(option);
+                option.textContent = `Minggu ${i}`;
+                weekSelect.appendChild(option);
             }
         }
 
@@ -173,23 +163,24 @@
                         label: 'Pemasukan',
                         data: incomeData,
                         borderColor: 'green',
-                        fill: false
+                        fill: false,
                     },
                     {
                         label: 'Pengeluaran',
                         data: expenseData,
                         borderColor: 'red',
-                        fill: false
+                        fill: false,
                     },
                     {
                         label: 'Saldo',
                         data: balanceData,
                         borderColor: 'blue',
-                        fill: false
-                    }
-                ]
+                        fill: false,
+                    },
+                ],
             },
             options: {
+                responsive: true,
                 scales: {
                     y: {
                         beginAtZero: true
@@ -198,22 +189,21 @@
             }
         });
 
-        // Listen for transactions in Firebase
+        // Listen for changes in Firebase database
         onValue(ref(database, 'transactions'), (snapshot) => {
-            const data = snapshot.val();
             transactions = [];
-            transactionTable.innerHTML = '';
-            labels.length = 0;
-            incomeData.length = 0;
-            expenseData.length = 0;
-            balanceData.length = 0;
+            snapshot.forEach((childSnapshot) => {
+                const transaction = childSnapshot.val();
+                transaction.id = childSnapshot.key; // Menyimpan ID transaksi
+                transactions.push(transaction);
+            });
+            updateTable();
+        });
 
-            let totalIncome = 0;
-            let totalExpense = 0;
-
-            for (let key in data) {
-                const transaction = data[key];
-                transactions.push({ ...transaction, id: key });
+        // Update the transaction table
+        function updateTable() {
+            transactionTable.innerHTML = ''; // Kosongkan tabel sebelum ditampilkan
+            transactions.forEach(transaction => {
                 const date = new Date(transaction.timestamp);
                 const formattedDate = date.toLocaleString('id-ID', {
                     year: 'numeric',
@@ -224,31 +214,21 @@
                     second: '2-digit'
                 });
 
-                labels.push(formattedDate);
-                if (transaction.type === 'income') {
-                    totalIncome += transaction.amount;
-                    incomeData.push(transaction.amount);
-                    expenseData.push(0);
-                } else {
-                    totalExpense += transaction.amount;
-                    incomeData.push(0);
-                    expenseData.push(transaction.amount);
-                }
-
-                const currentBalance = totalIncome - totalExpense;
-                balanceData.push(currentBalance);
-            }
-
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${transaction.description}</td>
+                    <td>Rp ${transaction.amount}</td>
+                    <td>${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td>
+                    <td>${formattedDate}</td>
+                    <td><button onclick="removeTransaction('${transaction.id}')">Hapus</button></td>
+                `;
+                transactionTable.appendChild(row);
+            });
             updateSummary();
-            myChart.data.labels = labels;
-            myChart.data.datasets[0].data = incomeData;
-            myChart.data.datasets[1].data = expenseData;
-            myChart.data.datasets[2].data = balanceData;
-            myChart.update();
-        });
+        }
 
-        // Add new transaction
-        form.addEventListener('submit', function(e) {
+        // Form submission
+        form.addEventListener('submit', (e) => {
             e.preventDefault();
             const description = document.getElementById('description').value;
             const amount = parseFloat(document.getElementById('amount').value);
@@ -268,16 +248,13 @@
             });
         });
 
-        // Filter transactions based on selected date
+        // Filter transactions based on selected week
         filterButton.addEventListener('click', () => {
             const year = document.getElementById('year').value;
-            const month = document.getElementById('month').value;
-            const day = document.getElementById('day').value;
+            const week = document.getElementById('week').value;
 
-            const selectedDate = new Date(year, month, day);
-            const startDate = new Date(selectedDate);
-            const endDate = new Date(selectedDate);
-            endDate.setDate(endDate.getDate() + 6); // Tambahkan 6 hari untuk mendapatkan rentang satu minggu
+            const startDate = new Date(year, 0, 1 + (week - 1) * 7);
+            const endDate = new Date(year, 0, 1 + week * 7 - 1); // Last day of the week
 
             transactionTable.innerHTML = ''; // Kosongkan tabel sebelum ditampilkan
 
@@ -348,6 +325,7 @@
 
         // Populate date selectors on load
         populateDateSelectors();
+        populateWeekSelector();
     </script>
 </body>
 </html>
