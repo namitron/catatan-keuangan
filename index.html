@@ -295,6 +295,10 @@
         };
 
 
+
+
+
+        
 // Update transaction table
 const updateTable = () => {
     transactionTable.innerHTML = ''; // Kosongkan tabel sebelum diisi
@@ -329,7 +333,8 @@ const updateTable = () => {
         const balanceCell = row.insertCell(4);
         balanceCell.textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
         
-        const deleteButton = row.insertCell(5).appendChild(document.createElement('button'));
+        const actionCell = row.insertCell(5);
+        const deleteButton = actionCell.appendChild(document.createElement('button'));
         deleteButton.textContent = 'Hapus';
         deleteButton.className = 'delete-button';
         deleteButton.onclick = () => deleteTransaction(transaction.key);
@@ -367,7 +372,10 @@ function editCell(cell, transactionKey, field) {
     cell.appendChild(input);
     input.focus();
 
-    input.onblur = () => {
+    // Create Save button
+    const saveButton = document.createElement('button');
+    saveButton.textContent = 'Simpan';
+    saveButton.onclick = () => {
         const newValue = input.value;
         if (newValue !== originalValue) {
             updateTransaction(transactionKey, field, newValue);
@@ -382,7 +390,27 @@ function editCell(cell, transactionKey, field) {
         } else {
             cell.textContent = newValue;
         }
+
+        // Kembalikan tombol Hapus
+        cell.appendChild(createDeleteButton(transactionKey));
     };
+
+    cell.appendChild(saveButton);
+
+    input.onblur = () => {
+        // Jika blur, kembalikan cell tanpa menyimpan
+        cell.innerHTML = originalValue;
+        cell.appendChild(createDeleteButton(transactionKey));
+    };
+}
+
+// Function to create a delete button
+function createDeleteButton(transactionKey) {
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Hapus';
+    deleteButton.className = 'delete-button';
+    deleteButton.onclick = () => deleteTransaction(transactionKey);
+    return deleteButton;
 }
 
 // Function to update transaction in Firebase
