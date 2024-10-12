@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -8,13 +8,37 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Gaya untuk tabel dan elemen lainnya tetap sama seperti sebelumnya */
+        /* Gaya untuk tabel */
+        table {
+            width: 100%;
+            max-width: 500px;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 9px;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 6px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* Gaya untuk tombol hapus */
+        .delete-button, .edit-button {
+            font-size: 8px;
+            padding: 2px 5px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Catatan Keuangan</h1>
-        
+
         <form id="form">
             <input type="text" id="description" placeholder="Deskripsi" required>
             <input type="number" id="amount" placeholder="Jumlah" required>
@@ -48,19 +72,25 @@
         </div>
 
         <button id="download-button">Unduh Excel</button>
-        
-        <div id="chart-container">
-            <canvas id="myChart"></canvas>
-        </div>
     </div>
 
     <script type="module">
-        // Firebase setup
+        // Import Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
         import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
         // Firebase configuration
-        const firebaseConfig = { /* your config */ };
+        const firebaseConfig = {
+            apiKey: "AIzaSyBCKzM7sv0rfxIgiTvdehUq8uL_ad9_u-4",
+            authDomain: "catatan-b9f7c.firebaseapp.com",
+            databaseURL: "https://catatan-b9f7c-default-rtdb.firebaseio.com",
+            projectId: "catatan-b9f7c",
+            storageBucket: "catatan-b9f7c.appspot.com",
+            messagingSenderId: "1012027038485",
+            appId: "1:1012027038485:web:efe4484f7fb222742de71c"
+        };
+
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
@@ -74,19 +104,22 @@
 
         let transactions = [];
 
-        // Add transaction
+        // Add a transaction
         form.addEventListener('submit', (e) => {
             e.preventDefault();
+
             const description = document.getElementById('description').value;
             const amount = parseFloat(document.getElementById('amount').value);
             const type = document.getElementById('type').value;
             const timestamp = new Date().toISOString();
+
+            // Create transaction object
             const transaction = { description, amount, type, timestamp };
 
-            // Add to Firebase
+            // Add transaction to Firebase
             const transactionRef = ref(database, 'transactions');
             push(transactionRef, transaction);
-            form.reset(); // Reset form
+            form.reset(); // Reset form setelah data ditambahkan
         });
 
         // Fetch transactions from Firebase
@@ -101,49 +134,47 @@
             });
         };
 
-        // Update table
+        // Update transaction table
         const updateTable = () => {
-            transactionTable.innerHTML = ''; // Clear table
+            transactionTable.innerHTML = '';
+
+            let incomeTotal = 0;
+            let expenseTotal = 0;
+
             transactions.forEach(transaction => {
                 const row = transactionTable.insertRow();
                 row.insertCell(0).textContent = transaction.description;
-                row.insertCell(1).textContent = `Rp ${transaction.amount.toLocaleString()}`;
+                row.insertCell(1).innerHTML = `<input type="number" value="${transaction.amount}" class="amount-input">`;
                 row.insertCell(2).textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
                 row.insertCell(3).textContent = new Date(transaction.timestamp).toLocaleString();
                 row.insertCell(4).textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
 
-                // Create edit button
-                const editButton = row.insertCell(5).appendChild(document.createElement('button'));
+                const actionCell = row.insertCell(5);
+                const editButton = document.createElement('button');
                 editButton.textContent = 'Edit';
-                editButton.onclick = () => editTransaction(transaction);
+                editButton.className = 'edit-button';
+                editButton.onclick = () => editTransaction(transaction.key, row);
+                actionCell.appendChild(editButton);
 
-                // Create delete button
-                const deleteButton = row.insertCell(6).appendChild(document.createElement('button'));
+                const deleteButton = document.createElement('button');
                 deleteButton.textContent = 'Hapus';
+                deleteButton.className = 'delete-button';
                 deleteButton.onclick = () => deleteTransaction(transaction.key);
+                actionCell.appendChild(deleteButton);
+
+                // Hitung total pemasukan dan pengeluaran
+                if (transaction.type === 'income') {
+                    incomeTotal += transaction.amount;
+                } else {
+                    expenseTotal += transaction.amount;
+                }
             });
+
+            const balance = incomeTotal - expenseTotal;
+            incomeTotalDisplay.textContent = `Rp ${incomeTotal.toLocaleString()}`;
+            expenseTotalDisplay.textContent = `Rp ${expenseTotal.toLocaleString()}`;
+            balanceDisplay.textContent = `Rp ${balance.toLocaleString()}`;
         };
-
-        // Edit transaction
-        function editTransaction(transaction) {
-            const description = prompt("Edit Deskripsi:", transaction.description);
-            const amount = prompt("Edit Jumlah:", transaction.amount);
-            const type = prompt("Edit Tipe (income/expense):", transaction.type);
-
-            if (description && amount && type) {
-                const updatedTransaction = { description, amount: parseFloat(amount), type, timestamp: transaction.timestamp };
-
-                // Update in Firebase
-                const transactionRef = ref(database, `transactions/${transaction.key}`);
-                update(transactionRef, updatedTransaction);
-            }
-        }
-
-        // Delete transaction
-        function deleteTransaction(key) {
-            const transactionRef = ref(database, `transactions/${key}`);
-            remove(transactionRef);
-        }
 
         // Calculate balance
         function calculateBalance(transaction) {
@@ -155,6 +186,37 @@
             });
             return balance;
         }
+
+        // Edit transaction
+        function editTransaction(key, row) {
+            const amountInput = row.cells[1].querySelector('.amount-input');
+            const newAmount = parseFloat(amountInput.value);
+
+            // Update the transaction in Firebase
+            const transactionRef = ref(database, `transactions/${key}`);
+            update(transactionRef, { amount: newAmount })
+                .then(() => {
+                    alert('Transaksi berhasil diperbarui');
+                    fetchTransactions(); // Refresh the table after editing
+                })
+                .catch(error => {
+                    console.error('Error updating transaction:', error);
+                });
+        }
+
+        // Delete transaction
+        function deleteTransaction(key) {
+            const transactionRef = ref(database, `transactions/${key}`);
+            remove(transactionRef);
+        }
+
+        // Download transactions as Excel
+        downloadButton.addEventListener('click', () => {
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(transactions);
+            XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
+            XLSX.writeFile(wb, 'transactions.xlsx');
+        });
 
         // Call functions to initialize app
         fetchTransactions(); // Fetch transactions when the app loads
