@@ -175,7 +175,7 @@
                 option.textContent = `Minggu ${i}`;
                 weekSelect.appendChild(option);
             }
-            weekSelect.value = Math.ceil((currentDate.getDate() + 1) / 7); // Set default minggu ke minggu saat ini
+            weekSelect.value = 2; // Set default minggu ke minggu kedua
         }
 
         // Chart.js setup
@@ -280,23 +280,47 @@
             balanceDisplay.textContent = `Rp ${balance}`;
 
             // Update grafik
-            updateChart(incomeTotal, expenseTotal, balance);
+            updateChart();
         }
 
-        // Update the chart based on totals
-        function updateChart(incomeTotal, expenseTotal, balance) {
+        // Update the chart based on weekly totals
+        function updateChart() {
             labels.length = 0; // Kosongkan label grafik
             incomeData.length = 0; // Kosongkan data pemasukan
             expenseData.length = 0; // Kosongkan data pengeluaran
             balanceData.length = 0; // Kosongkan data saldo
 
+            const year = document.getElementById('year').value;
+            const month = document.getElementById('month').value;
             const week = document.getElementById('week').value;
 
+            let incomeTotal = 0;
+            let expenseTotal = 0;
+            let balanceTotal = 0;
+
             for (let i = 1; i <= week; i++) {
+                const startDate = new Date(year, month - 1, (i - 1) * 7 + 1);
+                const endDate = new Date(year, month - 1, i * 7);
+                transactions.forEach(transaction => {
+                    const transactionDate = new Date(transaction.time);
+                    if (transactionDate >= startDate && transactionDate <= endDate) {
+                        if (transaction.type === 'income') {
+                            incomeTotal += transaction.amount;
+                        } else {
+                            expenseTotal += transaction.amount;
+                        }
+                    }
+                });
+
                 labels.push(`Minggu ${i}`);
+                balanceTotal = incomeTotal - expenseTotal;
                 incomeData.push(incomeTotal);
                 expenseData.push(expenseTotal);
-                balanceData.push(balance);
+                balanceData.push(balanceTotal);
+
+                // Reset untuk minggu berikutnya
+                incomeTotal = 0;
+                expenseTotal = 0;
             }
 
             myChart.update(); // Perbarui grafik
