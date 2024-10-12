@@ -1,14 +1,5 @@
-const form = document.getElementById('form');
-const transactionTable = document.getElementById('transaction-table');
-const incomeTotalDisplay = document.getElementById('income-total');
-const expenseTotalDisplay = document.getElementById('expense-total');
-const balanceDisplay = document.getElementById('balance');
-
-let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-
-// Display existing transactions on load
-transactions.forEach(displayTransaction);
-updateSummary();
+// Inisialisasi Firebase Database
+const database = firebase.database();
 
 form.addEventListener('submit', function(e) {
     e.preventDefault();
@@ -17,18 +8,40 @@ form.addEventListener('submit', function(e) {
     const amount = parseFloat(document.getElementById('amount').value);
     const type = document.getElementById('type').value;
 
+    if (description === '' || isNaN(amount)) {
+        alert('Silakan masukkan deskripsi dan jumlah yang valid.');
+        return;
+    }
+
     const transaction = {
         description,
         amount,
         type
     };
 
-    transactions.push(transaction);
+    // Simpan transaksi di Firebase
+    database.ref('transactions').push(transaction);
+
     displayTransaction(transaction);
     updateSummary();
-    updateLocalStorage();
 
     form.reset();
+});
+
+// Ambil data transaksi dari Firebase
+database.ref('transactions').on('value', function(snapshot) {
+    const data = snapshot.val();
+    transactions = [];
+
+    // Hapus isi tabel sebelum menampilkan ulang
+    transactionTable.innerHTML = '';
+
+    for (let key in data) {
+        transactions.push(data[key]);
+        displayTransaction(data[key]);
+    }
+    
+    updateSummary();
 });
 
 function displayTransaction(transaction) {
@@ -37,17 +50,8 @@ function displayTransaction(transaction) {
         <td>${transaction.description}</td>
         <td>Rp ${transaction.amount}</td>
         <td>${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td>
-        <td><button onclick="removeTransaction(${transactions.indexOf(transaction)})">Hapus</button></td>
     `;
     transactionTable.appendChild(row);
-}
-
-function removeTransaction(index) {
-    transactions.splice(index, 1);
-    transactionTable.innerHTML = '';
-    transactions.forEach(displayTransaction);
-    updateSummary();
-    updateLocalStorage();
 }
 
 function updateSummary() {
@@ -64,8 +68,4 @@ function updateSummary() {
     incomeTotalDisplay.textContent = `Rp ${incomeTotal}`;
     expenseTotalDisplay.textContent = `Rp ${expenseTotal}`;
     balanceDisplay.textContent = `Rp ${balance}`;
-}
-
-function updateLocalStorage() {
-    localStorage.setItem('transactions', JSON.stringify(transactions));
 }
