@@ -44,6 +44,7 @@
                     <th>Deskripsi</th>
                     <th>Jumlah</th>
                     <th>Tipe</th>
+                    <th>Waktu</th> <!-- Kolom waktu ditambahkan -->
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -124,7 +125,8 @@
             const transaction = {
                 description,
                 amount,
-                type
+                type,
+                timestamp: Date.now() // Menyimpan waktu transaksi
             };
 
             // Push transaction to Firebase
@@ -141,10 +143,21 @@
         // Display transaction in table
         function displayTransaction(transaction) {
             const row = document.createElement('tr');
+            const date = new Date(transaction.timestamp); // Mengonversi timestamp menjadi objek Date
+            const formattedDate = date.toLocaleString('id-ID', { // Format tanggal dan waktu
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+
             row.innerHTML = `
                 <td>${transaction.description}</td>
                 <td>Rp ${transaction.amount}</td>
                 <td>${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td>
+                <td>${formattedDate}</td> <!-- Menampilkan waktu transaksi -->
                 <td><button onclick="removeTransaction('${transaction.id}')">Hapus</button></td>
             `;
             transactionTable.appendChild(row);
@@ -177,7 +190,15 @@
             const data = transactions.map(transaction => ({
                 Deskripsi: transaction.description,
                 Jumlah: transaction.amount,
-                Tipe: transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'
+                Tipe: transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+                Waktu: new Date(transaction.timestamp).toLocaleString('id-ID', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }) // Menambahkan waktu ke data untuk Excel
             }));
             downloadExcel(data);
         });
