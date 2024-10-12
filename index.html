@@ -99,20 +99,24 @@
 
     <!-- Firebase Scripts -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+         // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+  import { getDatabase } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCThcGVbqaOSvDhWARk0-4Icqxt95vuVgY",
-            authDomain: "catatan-67be8.firebaseapp.com",
-            projectId: "catatan-67be8",
-            storageBucket: "catatan-67be8.appspot.com",
-            messagingSenderId: "481382304833",
-            appId: "1:481382304833:web:4004daa9d8d4daed440ac0"
-        };
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyBCKzM7sv0rfxIgiTvdehUq8uL_ad9_u-4",
+    authDomain: "catatan-b9f7c.firebaseapp.com",
+    databaseURL: "https://catatan-b9f7c-default-rtdb.firebaseio.com",
+    projectId: "catatan-b9f7c",
+    storageBucket: "catatan-b9f7c.appspot.com",
+    messagingSenderId: "1012027038485",
+    appId: "1:1012027038485:web:efe4484f7fb222742de71c"
+  };
 
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const database = getDatabase(app);
 
         const form = document.getElementById('form');
         const transactionTable = document.getElementById('transaction-table');
