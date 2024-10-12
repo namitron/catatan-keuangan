@@ -230,4 +230,162 @@
                     {
                         label: 'Saldo',
                         data: balanceData,
-           
+                        borderColor: 'blue',
+                        fill: false,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Waktu'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Jumlah (Rp)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Add a transaction
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
+            const timestamp = new Date().toISOString();
+
+            // Create transaction object
+            const transaction = { description, amount, type, timestamp };
+
+            // Add transaction to Firebase
+            const transactionRef = ref(database, 'transactions');
+            push(transactionRef, transaction);
+            form.reset(); // Reset form setelah data ditambahkan
+        });
+
+        // Fetch transactions from Firebase
+        const fetchTransactions = () => {
+            const transactionRef = ref(database, 'transactions');
+            onValue(transactionRef, (snapshot) => {
+                transactions = [];
+                snapshot.forEach(childSnapshot => {
+                    transactions.push({ key: childSnapshot.key, ...childSnapshot.val() });
+                });
+                updateTable();
+            });
+        };
+
+        // Update transaction table
+        const updateTable = () => {
+            transactionTable.innerHTML = ''; // Kosongkan tabel sebelum diisi
+
+            let incomeTotal = 0;
+            let expenseTotal = 0;
+
+            transactions.forEach(transaction => {
+                const row = transactionTable.insertRow();
+                row.insertCell(0).textContent = transaction.description;
+                row.insertCell(1).textContent = `Rp ${transaction.amount.toLocaleString()}`;
+                row.insertCell(2).textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
+                row.insertCell(3).textContent = new Date(transaction.timestamp).toLocaleString();
+                row.insertCell(4).textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
+                const deleteButton = row.insertCell(5).appendChild(document.createElement('button'));
+                deleteButton.textContent = 'Hapus';
+                deleteButton.className = 'delete-button';
+                deleteButton.onclick = () => deleteTransaction(transaction.key);
+
+                // Hitung total pemasukan dan pengeluaran
+                if (transaction.type === 'income') {
+                    incomeTotal += transaction.amount;
+                } else {
+                    expenseTotal += transaction.amount;
+                }
+            });
+
+            const balance = incomeTotal - expenseTotal;
+            incomeTotalDisplay.textContent = `Rp ${incomeTotal.toLocaleString()}`;
+            expenseTotalDisplay.textContent = `Rp ${expenseTotal.toLocaleString()}`;
+            balanceDisplay.textContent = `Rp ${balance.toLocaleString()}`;
+
+            // Perbarui grafik
+            updateChart();
+        };
+
+        // Calculate balance
+        function calculateBalance(transaction) {
+            let balance = 0;
+            transactions.forEach(trans => {
+                if (trans.key <= transaction.key) {
+                    balance += trans.type === 'income' ? trans.amount : -trans.amount;
+                }
+            });
+            return balance;
+        }
+
+        // Update chart with transaction data
+        function updateChart() {
+            labels.length = 0;
+            incomeData.length = 0;
+            expenseData.length = 0;
+            balanceData.length = 0;
+
+            transactions.forEach(transaction => {
+                labels.push(new Date(transaction.timestamp).toLocaleString());
+                incomeData.push(transaction.type === 'income' ? transaction.amount : 0);
+                expenseData.push(transaction.type === 'expense' ? transaction.amount : 0);
+                balanceData.push(calculateBalance(transaction));
+            });
+
+            myChart.update(); // Perbarui grafik
+        }
+
+        // Delete transaction
+        function deleteTransaction(key) {
+            const transactionRef = ref(database, `transactions/${key}`);
+            remove(transactionRef);
+        }
+
+        // Download transactions as Excel
+        downloadButton.addEventListener('click', () => {
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(transactions);
+            XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
+            XLSX.writeFile(wb, 'transactions.xlsx');
+        });
+
+        // Filter transactions by selected date
+        filterButton.addEventListener('click', () => {
+            const year = document.getElementById('year').value;
+            const month = document.getElementById('month').value;
+            const week = document.getElementById('week').value;
+
+            // Logic to filter transactions based on year, month, and week
+            const filteredTransactions = transactions.filter(transaction => {
+                const transactionDate = new Date(transaction.timestamp);
+                const transactionYear = transactionDate.getFullYear();
+                const transactionMonth = transactionDate.getMonth() + 1; // Bulan dimulai dari 0
+                const transactionWeek = Math.ceil(transactionDate.getDate() / 7); // Menghitung minggu
+
+                return transactionYear == year && transactionMonth == month && transactionWeek == week;
+            });
+
+            transactions = filteredTransactions; // Update transaksi yang ditampilkan
+            updateTable(); // Perbarui tabel
+        });
+
+        // Call functions to initialize app
+        populateDateSelectors();
+        initializeDefaultValues();
+        fetchTransactions(); // Fetch transactions when the app loads
+    </script>
+</body>
+</html>
