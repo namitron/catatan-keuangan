@@ -341,43 +341,24 @@
             return balance;
         }
 
-        // Update chart with transaction data
-        function updateChart() {
-            labels.length = 0;
-            incomeData.length = 0;
-            expenseData.length = 0;
-            balanceData.length = 0;
+       // Update chart with filtered transaction data
+function updateChart(transactionsToUpdate) {
+    labels.length = 0;
+    incomeData.length = 0;
+    expenseData.length = 0;
+    balanceData.length = 0;
 
-            transactions.forEach(transaction => {
-                labels.push(new Date(transaction.timestamp).toLocaleString());
-                incomeData.push(transaction.type === 'income' ? transaction.amount : 0);
-                expenseData.push(transaction.type === 'expense' ? transaction.amount : 0);
-                balanceData.push(calculateBalance(transaction));
-            });
+    transactionsToUpdate.forEach(transaction => {
+        labels.push(new Date(transaction.timestamp).toLocaleString());
+        incomeData.push(transaction.type === 'income' ? transaction.amount : 0);
+        expenseData.push(transaction.type === 'expense' ? transaction.amount : 0);
+        balanceData.push(calculateBalance(transaction));
+    });
 
-            myChart.update(); // Perbarui grafik
-        }
+    myChart.update(); // Perbarui grafik
+}
 
-        // Delete transaction
-        function deleteTransaction(key) {
-            const transactionRef = ref(database, `transactions/${key}`);
-            remove(transactionRef);
-        }
-
-        // Download transactions as Excel
-        downloadButton.addEventListener('click', () => {
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(transactions);
-            XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
-            XLSX.writeFile(wb, 'transactions.xlsx');
-        });
-
-
-
-
-
-        
-    // Filter transactions by selected date
+// Filter transactions by selected date
 filterButton.addEventListener('click', () => {
     const year = document.getElementById('year').value;
     const month = document.getElementById('month').value;
@@ -419,11 +400,15 @@ filterButton.addEventListener('click', () => {
             deleteButton.className = 'delete-button';
             deleteButton.onclick = () => deleteTransaction(transaction.key);
         });
-
-        // Update totals
-        updateTotals(filteredTransactions);
     }
+
+    // Update totals
+    updateTotals(filteredTransactions);
+
+    // Update the chart with filtered data
+    updateChart(filteredTransactions);
 });
+
 
 
 
