@@ -1,34 +1,61 @@
 const form = document.getElementById('form');
-const transactionList = document.getElementById('transaction-list');
+const transactionTable = document.getElementById('transaction-table');
+const incomeTotalDisplay = document.getElementById('income-total');
+const expenseTotalDisplay = document.getElementById('expense-total');
 const balanceDisplay = document.getElementById('balance');
 
 let transactions = [];
 
 form.addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const description = document.getElementById('description').value;
     const amount = parseFloat(document.getElementById('amount').value);
+    const type = document.getElementById('type').value;
 
     const transaction = {
         description,
-        amount
+        amount,
+        type
     };
 
     transactions.push(transaction);
     displayTransaction(transaction);
-    updateBalance();
+    updateSummary();
 
     form.reset();
 });
 
 function displayTransaction(transaction) {
-    const listItem = document.createElement('li');
-    listItem.textContent = `${transaction.description}: Rp ${transaction.amount}`;
-    transactionList.appendChild(listItem);
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>${transaction.description}</td>
+        <td>Rp ${transaction.amount}</td>
+        <td>${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td>
+        <td><button onclick="removeTransaction(${transactions.indexOf(transaction)})">Hapus</button></td>
+    `;
+    transactionTable.appendChild(row);
 }
 
-function updateBalance() {
-    const total = transactions.reduce((acc, transaction) => acc + transaction.amount, 0);
-    balanceDisplay.textContent = `Rp ${total}`;
+function removeTransaction(index) {
+    transactions.splice(index, 1);
+    transactionTable.innerHTML = '';
+    transactions.forEach(displayTransaction);
+    updateSummary();
+}
+
+function updateSummary() {
+    const incomeTotal = transactions
+        .filter(transaction => transaction.type === 'income')
+        .reduce((acc, transaction) => acc + transaction.amount, 0);
+    
+    const expenseTotal = transactions
+        .filter(transaction => transaction.type === 'expense')
+        .reduce((acc, transaction) => acc + transaction.amount, 0);
+    
+    const balance = incomeTotal - expenseTotal;
+
+    incomeTotalDisplay.textContent = `Rp ${incomeTotal}`;
+    expenseTotalDisplay.textContent = `Rp ${expenseTotal}`;
+    balanceDisplay.textContent = `Rp ${balance}`;
 }
