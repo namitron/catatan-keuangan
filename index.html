@@ -45,7 +45,7 @@
     <script type="module">
       // Import Firebase SDK
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-      import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+      import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
       // Firebase configuration
       const firebaseConfig = {
@@ -89,11 +89,12 @@
       form.addEventListener('submit', function(e) {
           e.preventDefault();
 
-          const description = document.getElementById('description').value;
+          const description = document.getElementById('description').value.trim();
           const amount = parseFloat(document.getElementById('amount').value);
           const type = document.getElementById('type').value;
 
-          if (description === '' || isNaN(amount)) {
+          // Input validation
+          if (description === '' || isNaN(amount) || amount <= 0) {
               alert('Silakan masukkan deskripsi dan jumlah yang valid.');
               return;
           }
