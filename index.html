@@ -235,6 +235,9 @@
 
             let incomeTotal = 0;
             let expenseTotal = 0;
+            let dailyIncome = {};
+            let dailyExpense = {};
+            let dailyBalance = {};
 
             const startDate = new Date(year, month - 1, (week - 1) * 7 + 1);
             const endDate = new Date(year, month - 1, week * 7);
@@ -264,11 +267,14 @@
                     };
                     actionCell.appendChild(deleteButton);
 
-                    // Hitung total pemasukan dan pengeluaran
+                    // Hitung total pemasukan dan pengeluaran per hari
+                    const dateKey = transactionDate.toLocaleDateString(); // Kunci untuk menyimpan data harian
                     if (transaction.type === 'income') {
                         incomeTotal += transaction.amount;
+                        dailyIncome[dateKey] = (dailyIncome[dateKey] || 0) + transaction.amount;
                     } else {
                         expenseTotal += transaction.amount;
+                        dailyExpense[dateKey] = (dailyExpense[dateKey] || 0) + transaction.amount;
                     }
                 }
             });
@@ -280,75 +286,61 @@
             balanceDisplay.textContent = `Rp ${balance}`;
 
             // Update grafik
-            updateChart(incomeTotal, expenseTotal, balance);
+            updateChart(dailyIncome, dailyExpense, balance);
         }
 
         // Update the chart based on totals
-        function updateChart(incomeTotal, expenseTotal, balance) {
+        function updateChart(dailyIncome, dailyExpense, totalBalance) {
             labels.length = 0; // Kosongkan label grafik
             incomeData.length = 0; // Kosongkan data pemasukan
             expenseData.length = 0; // Kosongkan data pengeluaran
             balanceData.length = 0; // Kosongkan data saldo
 
-            const week = document.getElementById('week').value;
-
-            for (let i = 1; i <= week; i++) {
-                labels.push(`Minggu ${i}`);
-                incomeData.push(incomeTotal);
-                expenseData.push(expenseTotal);
-                balanceData.push(balance);
+            // Tambahkan data harian ke grafik
+            for (const date in dailyIncome) {
+                labels.push(date);
+                incomeData.push(dailyIncome[date]);
+                expenseData.push(dailyExpense[date] || 0); // Jika tidak ada pengeluaran, set 0
+                balanceData.push(totalBalance); // Gunakan total saldo yang ada
             }
 
             myChart.update(); // Perbarui grafik
         }
 
         // Handle form submission
-        form.addEventListener('submit', (e) => {
+        form.onsubmit = (e) => {
             e.preventDefault();
             const description = document.getElementById('description').value;
-            const amount = parseInt(document.getElementById('amount').value);
+            const amount = parseFloat(document.getElementById('amount').value);
             const type = document.getElementById('type').value;
-            const time = new Date().toISOString(); // Menggunakan waktu saat ini
-            const balance = parseInt(balanceDisplay.textContent.replace('Rp ', '').replace(/,/g, ''));
+            const balance = (type === 'income') ? amount : -amount;
 
+            // Simpan transaksi ke Firebase
             push(ref(database, 'transactions'), {
                 description,
                 amount,
                 type,
-                time,
-                balance: type === 'income' ? balance + amount : balance - amount,
+                time: new Date().toISOString(), // Waktu transaksi
+                balance: balance // Saldo
             });
 
-            form.reset(); // Mengatur ulang form setelah submit
-        });
+            // Reset form
+            form.reset();
+        };
 
-        // Handle filter button click
-        filterButton.addEventListener('click', () => {
-            updateTable(); // Perbarui tabel dan grafik saat filter ditekan
-        });
+        // Download transactions as Excel
+        downloadButton.onclick = () => {
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.json_to_sheet(transactions);
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Transaksi');
+            XLSX.writeFile(workbook, 'transaksi.xlsx');
+        };
 
-        // Handle download button click
-        downloadButton.addEventListener('click', () => {
-            // Mengonversi tabel ke format Excel dan mengunduhnya
-            const tableData = [];
-            const rows = transactionTable.querySelectorAll('tr');
-            rows.forEach(row => {
-                const rowData = [];
-                const cells = row.querySelectorAll('td');
-                cells.forEach(cell => {
-                    rowData.push(cell.textContent);
-                });
-                tableData.push(rowData);
-            });
+        // Filter transactions on button click
+        filterButton.onclick = updateTable;
 
-            const ws = XLSX.utils.aoa_to_sheet(tableData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Data Keuangan');
-            XLSX.writeFile(wb, 'catatan_keuangan.xlsx');
-        });
-
-        // Inisialisasi date selectors
-        populateDateSelectors();
+        // Populate selectors on load
+        window.onload = populateDateSelectors;
     </script>
 </body>
 </html>
