@@ -8,26 +8,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Menambahkan Chart.js -->
     <style>
-        /* Tambahkan gaya untuk tombol */
-        #download-button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #4CAF50; /* Warna hijau */
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        #download-button:hover {
-            background-color: #45a049; /* Warna hijau lebih gelap saat hover */
-        }
-
         /* Gaya untuk grafik */
         #chart-container {
-            width: 50%; /* Lebar grafik */
+            width: 80%; /* Lebar grafik */
             margin: auto;
+            padding-top: 20px; /* Menambahkan jarak di atas grafik */
+        }
+
+        canvas {
+            max-width: 100%; /* Membuat grafik responsif */
+            height: 400px; /* Tinggi grafik */
         }
     </style>
 </head>
