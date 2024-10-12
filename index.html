@@ -105,9 +105,6 @@
               type
           };
 
-          // Log the transaction before pushing to Firebase
-          console.log('Transaksi yang akan ditambahkan:', transaction);
-
           // Push transaction to Firebase
           push(ref(database, 'transactions'), transaction)
               .then(() => {
