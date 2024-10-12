@@ -26,7 +26,7 @@
             max-width: 500px; /* Mengatur lebar maksimum tabel */
             border-collapse: collapse;
             margin-bottom: 20px;
-            font-size: 8px; /* Mengatur ukuran font tabel menjadi 8px */
+            font-size: 9px; /* Mengatur ukuran font tabel menjadi 9px */
         }
 
         th, td {
@@ -250,7 +250,6 @@
         // Add new transaction
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-
             const description = document.getElementById('description').value;
             const amount = parseFloat(document.getElementById('amount').value);
             const type = document.getElementById('type').value;
