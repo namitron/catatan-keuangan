@@ -434,7 +434,19 @@ filterButton.addEventListener('click', () => {
             expenseTotal += transaction.amount;
         }
     });
-
+            
+    // Function to delete a transaction
+    function deleteTransaction(key) {
+        const transactionRef = ref(database, `transactions/${key}`);
+        remove(transactionRef)
+            .then(() => {
+                console.log("Transaksi berhasil dihapus!");
+                fetchTransactions(); // Fetch transactions again to refresh the table
+            })
+            .catch((error) => {
+                console.error("Error deleting transaction: ", error);
+            });
+    }
     const balance = incomeTotal - expenseTotal;
     incomeTotalDisplay.textContent = `Rp ${incomeTotal.toLocaleString()}`;
     expenseTotalDisplay.textContent = `Rp ${expenseTotal.toLocaleString()}`;
