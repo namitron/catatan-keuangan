@@ -38,6 +38,13 @@
         th {
             background-color: #f2f2f2;
         }
+
+        /* Gaya untuk tombol hapus */
+        .delete-button {
+            font-size: 8px; /* Ukuran font tombol hapus */
+            padding: 2px 5px; /* Padding untuk tombol hapus */
+            cursor: pointer; /* Mengubah kursor saat hover */
+        }
     </style>
 </head>
 <body>
@@ -233,13 +240,18 @@
                     second: '2-digit'
                 });
 
+                const currentBalance = transactions
+                    .filter(t => new Date(t.timestamp) <= date)
+                    .reduce((acc, t) => acc + (t.type === 'income' ? t.amount : -t.amount), 0);
+
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${transaction.description}</td>
                     <td>Rp ${transaction.amount}</td>
                     <td>${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td>
                     <td>${formattedDate}</td>
-                    <td><button onclick="removeTransaction('${transaction.id}')">Hapus</button></td>
+                    <td>Rp ${currentBalance}</td>
+                    <td><button class="delete-button" onclick="removeTransaction('${transaction.id}')">Hapus</button></td>
                 `;
                 transactionTable.appendChild(row);
             });
@@ -305,7 +317,7 @@
                         <td>${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td>
                         <td>${formattedDate}</td>
                         <td>Rp ${currentBalance}</td>
-                        <td><button onclick="removeTransaction('${transaction.id}')">Hapus</button></td>
+                        <td><button class="delete-button" onclick="removeTransaction('${transaction.id}')">Hapus</button></td>
                     `;
                     transactionTable.appendChild(row);
                 }
