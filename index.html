@@ -108,13 +108,12 @@
 
         // Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyCThcGVbqaOSvDhWARk0-4Icqxt95vuVgY",
-            authDomain: "catatan-67be8.firebaseapp.com",
-            databaseURL: "https://catatan-67be8-default-rtdb.firebaseio.com",
-            projectId: "catatan-67be8",
-            storageBucket: "catatan-67be8.appspot.com",
-            messagingSenderId: "481382304833",
-            appId: "1:481382304833:web:de4ff9f36d2837f1440ac0"
+            apiKey: "AIzaSyBCKzM7sv0rfxIgiTvdehUq8uL_ad9_u-4",
+            authDomain: "catatan-b9f7c.firebaseapp.com",
+            projectId: "catatan-b9f7c",
+            storageBucket: "catatan-b9f7c.appspot.com",
+            messagingSenderId: "1012027038485",
+            appId: "1:1012027038485:web:efe4484f7fb222742de71c"
         };
 
         // Initialize Firebase
@@ -334,6 +333,7 @@
             remove(transactionRef)
                 .then(() => {
                     console.log('Transaksi dihapus dengan sukses.');
+                    fetchTransactions(); // Ambil kembali transaksi setelah penghapusan
                 })
                 .catch((error) => {
                     console.error('Error menghapus transaksi:', error);
