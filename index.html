@@ -9,7 +9,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Gaya untuk tabel dan grafik tetap sama */
-        /* Anda dapat menggunakan gaya yang telah ada */
+        #year, #month, #week {
+    width: 20px; /* Sesuaikan dengan lebar yang Anda inginkan */
+    padding: 5px; /* Sesuaikan dengan padding yang Anda inginkan */
+    font-size: 12px; /* Mengubah ukuran teks */
+}
+
     </style>
 </head>
 <body>
@@ -100,7 +105,6 @@
         const labels = [];
         const incomeData = [];
         const expenseData = [];
-        const balanceData = [];
 
         // Populate year, month, and week select elements
         function populateDateSelectors() {
@@ -180,7 +184,7 @@
             expenseTotalDisplay.textContent = `Rp ${expenseTotal.toLocaleString()}`;
             balanceDisplay.textContent = `Rp ${balance.toLocaleString()}`;
 
-            // Perbarui grafik
+            // Update chart
             updateChart();
         };
 
