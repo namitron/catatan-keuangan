@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catatan Keuangan</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Catatan Keuangan</h1>
+        <form id="form">
+            <input type="text" id="description" placeholder="Deskripsi" required>
+            <input type="number" id="amount" placeholder="Jumlah" required>
+            <button type="submit">Tambah</button>
+        </form>
+
+        <ul id="transaction-list"></ul>
+
+        <div class="summary">
+            <h2>Total</h2>
+            <p id="balance">Rp 0</p>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
