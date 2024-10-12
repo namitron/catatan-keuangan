@@ -23,6 +23,7 @@
         /* Gaya untuk tabel */
         table {
             width: 100%; /* Membuat tabel memenuhi lebar container */
+            max-width: 600px; /* Mengatur lebar maksimum tabel */
             border-collapse: collapse;
             margin-bottom: 20px;
         }
@@ -266,11 +267,17 @@
         }
 
         // Remove transaction from Firebase
-        window.removeTransaction = function(id) {
-            remove(ref(database, 'transactions/' + id));
+        function removeTransaction(id) {
+            remove(ref(database, 'transactions/' + id))
+                .then(() => {
+                    console.log('Transaksi berhasil dihapus');
+                })
+                .catch((error) => {
+                    console.error('Error menghapus transaksi:', error);
+                });
         }
 
-        // Update income, expense, and balance
+        // Update summary
         function updateSummary() {
             const incomeTotal = transactions
                 .filter(transaction => transaction.type === 'income')
