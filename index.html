@@ -169,13 +169,14 @@
             monthSelect.value = currentMonth; // Set default bulan ke bulan saat ini
 
             // Populate week
+            const currentWeekNumber = Math.ceil(currentDate.getDate() / 7); // Menghitung minggu saat ini
             for (let i = 1; i <= 52; i++) {
                 const option = document.createElement('option');
                 option.value = i;
                 option.textContent = `Minggu ${i}`;
                 weekSelect.appendChild(option);
             }
-            weekSelect.value = currentWeek; // Set default minggu ke minggu saat ini
+            weekSelect.value = currentWeekNumber; // Set default minggu ke minggu saat ini
         }
 
         // Chart.js setup
@@ -256,6 +257,39 @@
                 transactionTable.appendChild(row);
             });
             updateSummary();
+            updateChart(); // Memperbarui grafik dengan transaksi terbaru
+        }
+
+        // Update chart data based on transactions
+        function updateChart() {
+            labels.length = 0;
+            incomeData.length = 0;
+            expenseData.length = 0;
+            balanceData.length = 0;
+
+            // Menghitung pemasukan, pengeluaran, dan saldo untuk grafik
+            transactions.forEach(transaction => {
+                const date = new Date(transaction.timestamp);
+                const label = date.toLocaleDateString('id-ID');
+
+                if (!labels.includes(label)) {
+                    labels.push(label);
+                    incomeData.push(0);
+                    expenseData.push(0);
+                    balanceData.push(0);
+                }
+
+                const index = labels.indexOf(label);
+                if (transaction.type === 'income') {
+                    incomeData[index] += transaction.amount;
+                } else {
+                    expenseData[index] += transaction.amount;
+                }
+
+                balanceData[index] = incomeData[index] - expenseData[index];
+            });
+
+            myChart.update(); // Memperbarui grafik
         }
 
         // Add a transaction to Firebase
@@ -323,6 +357,7 @@
                 }
             });
             updateSummary();
+            updateChart(); // Memperbarui grafik setelah filter
         });
 
         // Remove transaction from Firebase
