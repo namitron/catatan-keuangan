@@ -266,26 +266,35 @@
             expenseData.length = 0;
             balanceData.length = 0;
 
-            // Menghitung pemasukan, pengeluaran, dan saldo untuk grafik
+            const year = document.getElementById('year').value;
+            const month = document.getElementById('month').value;
+            const week = document.getElementById('week').value;
+
+            // Menghitung pemasukan, pengeluaran, dan saldo untuk grafik selama satu minggu
+            const startDate = new Date(year, month - 1, 1 + (week - 1) * 7); // Hari pertama minggu
+            const endDate = new Date(year, month - 1, 1 + week * 7 - 1); // Hari terakhir minggu
+
             transactions.forEach(transaction => {
                 const date = new Date(transaction.timestamp);
-                const label = date.toLocaleDateString('id-ID');
+                if (date >= startDate && date <= endDate) {
+                    const label = date.toLocaleDateString('id-ID');
 
-                if (!labels.includes(label)) {
-                    labels.push(label);
-                    incomeData.push(0);
-                    expenseData.push(0);
-                    balanceData.push(0);
+                    if (!labels.includes(label)) {
+                        labels.push(label);
+                        incomeData.push(0);
+                        expenseData.push(0);
+                        balanceData.push(0);
+                    }
+
+                    const index = labels.indexOf(label);
+                    if (transaction.type === 'income') {
+                        incomeData[index] += transaction.amount;
+                    } else {
+                        expenseData[index] += transaction.amount;
+                    }
+
+                    balanceData[index] = incomeData[index] - expenseData[index];
                 }
-
-                const index = labels.indexOf(label);
-                if (transaction.type === 'income') {
-                    incomeData[index] += transaction.amount;
-                } else {
-                    expenseData[index] += transaction.amount;
-                }
-
-                balanceData[index] = incomeData[index] - expenseData[index];
             });
 
             myChart.update(); // Memperbarui grafik
@@ -318,44 +327,7 @@
 
         // Filter transactions based on selected week
         filterButton.addEventListener('click', () => {
-            const year = document.getElementById('year').value;
-            const month = document.getElementById('month').value;
-            const week = document.getElementById('week').value;
-
-            const startDate = new Date(year, month - 1, 1 + (week - 1) * 7); // Hari pertama minggu
-            const endDate = new Date(year, month - 1, 1 + week * 7 - 1); // Hari terakhir minggu
-
-            transactionTable.innerHTML = ''; // Kosongkan tabel sebelum ditampilkan
-
-            transactions.forEach(transaction => {
-                const date = new Date(transaction.timestamp);
-                if (date >= startDate && date <= endDate) {
-                    const formattedDate = date.toLocaleString('id-ID', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit'
-                    });
-
-                    const currentBalance = transactions
-                        .filter(t => new Date(t.timestamp) <= date)
-                        .reduce((acc, t) => acc + (t.type === 'income' ? t.amount : -t.amount), 0);
-
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${transaction.description}</td>
-                        <td>Rp ${transaction.amount}</td>
-                        <td>${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td>
-                        <td>${formattedDate}</td>
-                        <td>Rp ${currentBalance}</td>
-                        <td><button class="delete-button" onclick="removeTransaction('${transaction.id}')">Hapus</button></td>
-                    `;
-                    transactionTable.appendChild(row);
-                }
-            });
-            updateSummary();
+            updateTable(); // Tampilkan tabel berdasarkan transaksi
             updateChart(); // Memperbarui grafik setelah filter
         });
 
