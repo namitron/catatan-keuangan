@@ -149,6 +149,7 @@
                     transactions.push({ key: childSnapshot.key, ...childSnapshot.val() });
                 });
                 updateTable();
+                updateChart(); // Update chart after fetching transactions
             });
         };
 
@@ -277,6 +278,51 @@
             XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
             XLSX.writeFile(wb, "catatan_keuangan.xlsx");
         });
+
+        // Mengupdate grafik
+        const ctx = document.getElementById('myChart').getContext('2d');
+        const myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Pemasukan', 'Pengeluaran'],
+                datasets: [{
+                    label: 'Jumlah',
+                    data: [0, 0],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(255, 99, 132, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        function updateChart() {
+            let incomeTotal = 0;
+            let expenseTotal = 0;
+
+            transactions.forEach(transaction => {
+                if (transaction.type === 'income') {
+                    incomeTotal += transaction.amount;
+                } else {
+                    expenseTotal += transaction.amount;
+                }
+            });
+
+            myChart.data.datasets[0].data = [incomeTotal, expenseTotal];
+            myChart.update();
+        }
 
         // Ambil data transaksi saat halaman dimuat
         fetchTransactions();
