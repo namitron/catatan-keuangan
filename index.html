@@ -102,19 +102,20 @@
     </div>
 
     <!-- Firebase Scripts -->
-    <script type="module">
-        // Import Firebase SDK
+    <script type="module"> 
+        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
         import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
-        // Firebase configuration
+        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCThcGVbqaOSvDhWARk0-4Icqxt95vuVgY",
             authDomain: "catatan-67be8.firebaseapp.com",
+            databaseURL: "https://catatan-67be8-default-rtdb.firebaseio.com",
             projectId: "catatan-67be8",
             storageBucket: "catatan-67be8.appspot.com",
             messagingSenderId: "481382304833",
-            appId: "1:481382304833:web:4004daa9d8d4daed440ac0"
+            appId: "1:481382304833:web:de4ff9f36d2837f1440ac0"
         };
 
         // Initialize Firebase
