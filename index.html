@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catatan Keuangan</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -39,116 +40,137 @@
             <p>Pengeluaran: <span id="expense-total">Rp 0</span></p>
             <p>Saldo: <span id="balance">Rp 0</span></p>
         </div>
+
+        <!-- Tombol untuk mengunduh Excel -->
+        <button id="download-button">Unduh Excel</button>
     </div>
 
     <!-- Firebase Scripts -->
     <script type="module">
-      // Import Firebase SDK
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-      import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+        // Import Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
-      // Firebase configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyCThcGVbqaOSvDhWARk0-4Icqxt95vuVgY",
-        authDomain: "catatan-67be8.firebaseapp.com",
-        projectId: "catatan-67be8",
-        storageBucket: "catatan-67be8.appspot.com",
-        messagingSenderId: "481382304833",
-        appId: "1:481382304833:web:4004daa9d8d4daed440ac0"
-      };
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCThcGVbqaOSvDhWARk0-4Icqxt95vuVgY",
+            authDomain: "catatan-67be8.firebaseapp.com",
+            projectId: "catatan-67be8",
+            storageBucket: "catatan-67be8.appspot.com",
+            messagingSenderId: "481382304833",
+            appId: "1:481382304833:web:4004daa9d8d4daed440ac0"
+        };
 
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      const database = getDatabase(app);
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
 
-      // DOM Elements
-      const form = document.getElementById('form');
-      const transactionTable = document.getElementById('transaction-table');
-      const incomeTotalDisplay = document.getElementById('income-total');
-      const expenseTotalDisplay = document.getElementById('expense-total');
-      const balanceDisplay = document.getElementById('balance');
+        // DOM Elements
+        const form = document.getElementById('form');
+        const transactionTable = document.getElementById('transaction-table');
+        const incomeTotalDisplay = document.getElementById('income-total');
+        const expenseTotalDisplay = document.getElementById('expense-total');
+        const balanceDisplay = document.getElementById('balance');
+        const downloadButton = document.getElementById('download-button');
 
-      let transactions = [];
+        let transactions = [];
 
-      // Listen for transactions in Firebase
-      onValue(ref(database, 'transactions'), (snapshot) => {
-          const data = snapshot.val();
-          transactions = [];
-          transactionTable.innerHTML = '';
+        // Listen for transactions in Firebase
+        onValue(ref(database, 'transactions'), (snapshot) => {
+            const data = snapshot.val();
+            transactions = [];
+            transactionTable.innerHTML = '';
 
-          for (let key in data) {
-              const transaction = data[key];
-              transactions.push({ ...transaction, id: key });
-              displayTransaction({ ...transaction, id: key });
-          }
+            for (let key in data) {
+                const transaction = data[key];
+                transactions.push({ ...transaction, id: key });
+                displayTransaction({ ...transaction, id: key });
+            }
 
-          updateSummary();
-      });
+            updateSummary();
+        });
 
-      // Add new transaction
-      form.addEventListener('submit', function(e) {
-          e.preventDefault();
+        // Add new transaction
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
 
-          const description = document.getElementById('description').value.trim();
-          const amount = parseFloat(document.getElementById('amount').value);
-          const type = document.getElementById('type').value;
+            const description = document.getElementById('description').value.trim();
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
 
-          // Input validation
-          if (description === '' || isNaN(amount) || amount <= 0) {
-              alert('Silakan masukkan deskripsi dan jumlah yang valid.');
-              return;
-          }
+            // Input validation
+            if (description === '' || isNaN(amount) || amount <= 0) {
+                alert('Silakan masukkan deskripsi dan jumlah yang valid.');
+                return;
+            }
 
-          const transaction = {
-              description,
-              amount,
-              type
-          };
+            const transaction = {
+                description,
+                amount,
+                type
+            };
 
-          // Push transaction to Firebase
-          push(ref(database, 'transactions'), transaction)
-              .then(() => {
-                  console.log('Transaksi berhasil ditambahkan');
-                  form.reset(); // Reset form setelah berhasil
-              })
-              .catch((error) => {
-                  console.error('Error menambahkan transaksi:', error);
-              });
-      });
+            // Push transaction to Firebase
+            push(ref(database, 'transactions'), transaction)
+                .then(() => {
+                    console.log('Transaksi berhasil ditambahkan');
+                    form.reset(); // Reset form setelah berhasil
+                })
+                .catch((error) => {
+                    console.error('Error menambahkan transaksi:', error);
+                });
+        });
 
-      // Display transaction in table
-      function displayTransaction(transaction) {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-              <td>${transaction.description}</td>
-              <td>Rp ${transaction.amount}</td>
-              <td>${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td>
-              <td><button onclick="removeTransaction('${transaction.id}')">Hapus</button></td>
-          `;
-          transactionTable.appendChild(row);
-      }
+        // Display transaction in table
+        function displayTransaction(transaction) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${transaction.description}</td>
+                <td>Rp ${transaction.amount}</td>
+                <td>${transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}</td>
+                <td><button onclick="removeTransaction('${transaction.id}')">Hapus</button></td>
+            `;
+            transactionTable.appendChild(row);
+        }
 
-      // Remove transaction from Firebase
-      window.removeTransaction = function(id) {
-          remove(ref(database, 'transactions/' + id));
-      }
+        // Remove transaction from Firebase
+        window.removeTransaction = function(id) {
+            remove(ref(database, 'transactions/' + id));
+        }
 
-      // Update income, expense, and balance
-      function updateSummary() {
-          const incomeTotal = transactions
-              .filter(transaction => transaction.type === 'income')
-              .reduce((acc, transaction) => acc + transaction.amount, 0);
+        // Update income, expense, and balance
+        function updateSummary() {
+            const incomeTotal = transactions
+                .filter(transaction => transaction.type === 'income')
+                .reduce((acc, transaction) => acc + transaction.amount, 0);
 
-          const expenseTotal = transactions
-              .filter(transaction => transaction.type === 'expense')
-              .reduce((acc, transaction) => acc + transaction.amount, 0);
+            const expenseTotal = transactions
+                .filter(transaction => transaction.type === 'expense')
+                .reduce((acc, transaction) => acc + transaction.amount, 0);
 
-          const balance = incomeTotal - expenseTotal;
+            const balance = incomeTotal - expenseTotal;
 
-          incomeTotalDisplay.textContent = `Rp ${incomeTotal}`;
-          expenseTotalDisplay.textContent = `Rp ${expenseTotal}`;
-          balanceDisplay.textContent = `Rp ${balance}`;
-      }
+            incomeTotalDisplay.textContent = `Rp ${incomeTotal}`;
+            expenseTotalDisplay.textContent = `Rp ${expenseTotal}`;
+            balanceDisplay.textContent = `Rp ${balance}`;
+        }
+
+        // Download Excel file
+        downloadButton.addEventListener('click', function() {
+            const data = transactions.map(transaction => ({
+                Deskripsi: transaction.description,
+                Jumlah: transaction.amount,
+                Tipe: transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran'
+            }));
+            downloadExcel(data);
+        });
+
+        function downloadExcel(data) {
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Catatan Keuangan");
+            XLSX.writeFile(wb, "catatan_keuangan.xlsx");
+        }
     </script>
 </body>
 </html>
