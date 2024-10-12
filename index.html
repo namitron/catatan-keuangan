@@ -54,10 +54,12 @@
             <button type="submit">Tambah</button>
         </form>
 
-        <!-- Pilihan untuk memilih tahun dan minggu -->
+        <!-- Pilihan untuk memilih tahun, bulan, dan minggu -->
         <div>
             <label for="year">Tahun:</label>
             <select id="year"></select>
+            <label for="month">Bulan:</label>
+            <select id="month"></select>
             <label for="week">Minggu:</label>
             <select id="week"></select>
             <button id="filter-button">Tampilkan Catatan</button>
@@ -127,9 +129,10 @@
         const expenseData = [];
         const balanceData = [];
 
-        // Populate year and week select elements
+        // Populate year, month, and week select elements
         function populateDateSelectors() {
             const yearSelect = document.getElementById('year');
+            const monthSelect = document.getElementById('month');
             const currentDate = new Date();
             const currentYear = currentDate.getFullYear();
 
@@ -139,6 +142,18 @@
                 option.value = i;
                 option.textContent = i;
                 yearSelect.appendChild(option);
+            }
+
+            // Populate month
+            const months = [
+                "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+            ];
+            for (let i = 0; i < months.length; i++) {
+                const option = document.createElement('option');
+                option.value = i + 1; // Bulan dimulai dari 1
+                option.textContent = months[i];
+                monthSelect.appendChild(option);
             }
         }
 
@@ -233,28 +248,33 @@
             const description = document.getElementById('description').value;
             const amount = parseFloat(document.getElementById('amount').value);
             const type = document.getElementById('type').value;
+            const timestamp = new Date().toISOString();
 
-            // Push to Firebase
-            push(ref(database, 'transactions'), {
-                description: description,
-                amount: amount,
-                type: type,
-                timestamp: Date.now()
-            }).then(() => {
-                console.log('Transaksi berhasil ditambahkan');
-                form.reset();
-            }).catch((error) => {
-                console.error('Error menambahkan transaksi:', error);
-            });
+            const newTransaction = {
+                description,
+                amount,
+                type,
+                timestamp
+            };
+
+            push(ref(database, 'transactions'), newTransaction)
+                .then(() => {
+                    console.log('Transaksi berhasil ditambahkan');
+                    form.reset(); // Reset form setelah penambahan
+                })
+                .catch((error) => {
+                    console.error('Error menambahkan transaksi:', error);
+                });
         });
 
         // Filter transactions based on selected week
         filterButton.addEventListener('click', () => {
             const year = document.getElementById('year').value;
+            const month = document.getElementById('month').value;
             const week = document.getElementById('week').value;
 
-            const startDate = new Date(year, 0, 1 + (week - 1) * 7);
-            const endDate = new Date(year, 0, 1 + week * 7 - 1); // Last day of the week
+            const startDate = new Date(year, month - 1, 1 + (week - 1) * 7); // Hari pertama minggu
+            const endDate = new Date(year, month - 1, 1 + week * 7 - 1); // Hari terakhir minggu
 
             transactionTable.innerHTML = ''; // Kosongkan tabel sebelum ditampilkan
 
