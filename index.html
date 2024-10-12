@@ -279,17 +279,18 @@
             updateChartData();
         });
 
-        // Delete transaction function
-        function deleteTransaction(transactionId) {
-            const transactionRef = ref(database, `transactions/${transactionId}`);
-            remove(transactionRef)
-                .then(() => {
-                    console.log('Transaction deleted successfully!');
-                })
-                .catch((error) => {
-                    console.error('Error deleting transaction:', error);
-                });
-        }
+        // Fungsi untuk menghapus transaksi dari Firebase
+function deleteTransaction(transactionKey) {
+    const transactionRef = ref(database, 'transactions/' + transactionKey);
+    remove(transactionRef)
+        .then(() => {
+            console.log('Transaksi berhasil dihapus');
+        })
+        .catch((error) => {
+            console.error('Gagal menghapus transaksi:', error);
+        });
+}
+
 
         // Update chart data function
         function updateChartData() {
