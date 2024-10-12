@@ -372,7 +372,7 @@
             XLSX.writeFile(wb, 'transactions.xlsx');
         });
 
-        // Filter transactions by selected date
+// Filter transactions by selected date
 filterButton.addEventListener('click', () => {
     const year = document.getElementById('year').value;
     const month = document.getElementById('month').value;
@@ -388,13 +388,10 @@ filterButton.addEventListener('click', () => {
         return transactionYear == year && transactionMonth == month && transactionWeek == week;
     });
 
-    // Update transactions with filtered ones
-    transactions = filteredTransactions;
-
     // Clear the table before displaying results
     transactionTable.innerHTML = '';
 
-    if (transactions.length === 0) {
+    if (filteredTransactions.length === 0) {
         // If there are no transactions, display a message
         const row = transactionTable.insertRow();
         row.insertCell(0).textContent = 'Tidak ada data';
@@ -405,9 +402,24 @@ filterButton.addEventListener('click', () => {
         row.insertCell(5).innerHTML = '<button class="delete-button" disabled>Hapus</button>';
     } else {
         // If there are transactions, update the table with the filtered data
-        updateTable();
+        filteredTransactions.forEach(transaction => {
+            const row = transactionTable.insertRow();
+            row.insertCell(0).textContent = transaction.description;
+            row.insertCell(1).textContent = `Rp ${transaction.amount.toLocaleString()}`;
+            row.insertCell(2).textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
+            row.insertCell(3).textContent = new Date(transaction.timestamp).toLocaleString();
+            row.insertCell(4).textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
+            const deleteButton = row.insertCell(5).appendChild(document.createElement('button'));
+            deleteButton.textContent = 'Hapus';
+            deleteButton.className = 'delete-button';
+            deleteButton.onclick = () => deleteTransaction(transaction.key);
+        });
     }
+
+    // Update totals
+    updateTotals(filteredTransactions);
 });
+
 
 
         // Call functions to initialize app
