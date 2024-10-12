@@ -361,19 +361,10 @@ function editCell(cell, transactionKey, field) {
     saveButton.textContent = 'Simpan';
     saveButton.onclick = () => {
         const newValue = input.value;
+
+        // Validasi input
         if (newValue !== originalValue) {
             updateTransaction(transactionKey, field, newValue);
-            // Update cell content after saving
-            if (field === 'amount') {
-                cell.textContent = `Rp ${parseFloat(newValue).toLocaleString()}`; // format amount
-            } else if (field === 'timestamp') {
-                const newTimestamp = new Date(newValue).getTime(); // Mengubah ke timestamp
-                cell.textContent = new Date(newTimestamp).toLocaleString();
-            } else {
-                cell.textContent = newValue;
-            }
-        } else {
-            cell.textContent = originalValue; // Kembali ke nilai asli jika tidak ada perubahan
         }
 
         // Kembalikan tombol hapus setelah menyimpan
@@ -394,18 +385,22 @@ function editCell(cell, transactionKey, field) {
 // Function to update transaction in Firebase
 function updateTransaction(key, field, newValue) {
     const transactionRef = ref(database, 'transactions/' + key);
+    let updatedValue = newValue;
+
+    // Parse new value based on field
     if (field === 'amount') {
-        newValue = parseFloat(newValue);
+        updatedValue = parseFloat(newValue);
     } else if (field === 'timestamp') {
-        newValue = new Date(newValue).getTime(); // Mengubah ke timestamp
+        updatedValue = new Date(newValue).getTime(); // Mengubah ke timestamp
     }
-    update(transactionRef, { [field]: newValue })
+
+    update(transactionRef, { [field]: updatedValue })
         .then(() => {
             console.log('Transaction updated successfully');
             // Update data di local transactions array
             const transactionIndex = transactions.findIndex(t => t.key === key);
             if (transactionIndex > -1) {
-                transactions[transactionIndex][field] = newValue;
+                transactions[transactionIndex][field] = updatedValue;
             }
             updateTable(); // Perbarui tabel setelah perubahan
         })
@@ -428,7 +423,6 @@ function deleteTransaction(key) {
             console.error('Error deleting transaction: ', error);
         });
 }
-
 
 
 
