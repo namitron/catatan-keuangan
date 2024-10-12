@@ -6,7 +6,7 @@ body {
 }
 
 .container {
-    width: 300px;
+    width: 500px;
     margin: 50px auto;
     background-color: #fff;
     padding: 20px;
@@ -19,16 +19,20 @@ h1, h2 {
 
 form {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-bottom: 20px;
 }
 
-input {
-    margin: 10px 0;
+input, select {
+    width: 48%;
     padding: 10px;
+    margin: 10px 0;
     font-size: 1em;
 }
 
 button {
+    width: 100%;
     padding: 10px;
     background-color: #28a745;
     color: white;
@@ -36,13 +40,35 @@ button {
     cursor: pointer;
 }
 
-#transaction-list {
-    list-style-type: none;
-    padding: 0;
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+table, th, td {
+    border: 1px solid #ddd;
+}
+
+th, td {
+    padding: 10px;
+    text-align: center;
 }
 
 .summary {
     text-align: center;
+}
+
+.summary p {
+    font-size: 1.2em;
+}
+
+#income-total {
+    color: green;
+}
+
+#expense-total {
+    color: red;
 }
 
 #balance {
