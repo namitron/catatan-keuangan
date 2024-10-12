@@ -8,12 +8,52 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Gaya untuk tabel dan grafik tetap sama */
         #year, #month, #week {
     width: 20px; /* Sesuaikan dengan lebar yang Anda inginkan */
     padding: 5px; /* Sesuaikan dengan padding yang Anda inginkan */
     font-size: 12px; /* Mengubah ukuran teks */
 }
+
+
+
+        
+        /* Gaya untuk grafik */
+        #chart-container {
+            width: 80%; /* Lebar grafik */
+            margin: auto;
+            padding-top: 20px; /* Menambahkan jarak di atas grafik */
+        }
+
+        canvas {
+            max-width: 100%; /* Membuat grafik responsif */
+            height: 400px; /* Tinggi grafik */
+        }
+
+        /* Gaya untuk tabel */
+        table {
+            width: 100%; /* Membuat tabel memenuhi lebar container */
+            max-width: 500px; /* Mengatur lebar maksimum tabel */
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 9px; /* Mengatur ukuran font tabel menjadi 9px */
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 6px; /* Mengurangi padding untuk memperkecil ukuran sel */
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* Gaya untuk tombol hapus */
+        .delete-button {
+            font-size: 8px; /* Ukuran font tombol hapus */
+            padding: 2px 5px; /* Padding untuk tombol hapus */
+            cursor: pointer; /* Mengubah kursor saat hover */
+        }
 
     </style>
 </head>
