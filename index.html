@@ -298,7 +298,6 @@
 
 
 
-        
 // Update transaction table
 const updateTable = () => {
     transactionTable.innerHTML = ''; // Kosongkan tabel sebelum diisi
@@ -332,19 +331,14 @@ const updateTable = () => {
         // Editable balance cell
         const balanceCell = row.insertCell(4);
         balanceCell.textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
-        
+
+        // Action cell with Delete button
         const actionCell = row.insertCell(5);
-        const deleteButton = actionCell.appendChild(document.createElement('button'));
+        const deleteButton = document.createElement('button');
         deleteButton.textContent = 'Hapus';
         deleteButton.className = 'delete-button';
         deleteButton.onclick = () => deleteTransaction(transaction.key);
-
-        // Hitung total pemasukan dan pengeluaran
-        if (transaction.type === 'income') {
-            incomeTotal += transaction.amount;
-        } else {
-            expenseTotal += transaction.amount;
-        }
+        actionCell.appendChild(deleteButton);
     });
 
     const balance = incomeTotal - expenseTotal;
@@ -392,16 +386,22 @@ function editCell(cell, transactionKey, field) {
         }
 
         // Kembalikan tombol Hapus
-        cell.appendChild(createDeleteButton(transactionKey));
+        cell.innerHTML = ''; // Kosongkan cell sebelum menambahkan tombol Hapus
+        const deleteButton = createDeleteButton(transactionKey);
+        cell.appendChild(deleteButton);
     };
 
-    cell.appendChild(saveButton);
-
+    // Kembalikan tombol Hapus jika mengklik di luar
     input.onblur = () => {
-        // Jika blur, kembalikan cell tanpa menyimpan
         cell.innerHTML = originalValue;
-        cell.appendChild(createDeleteButton(transactionKey));
+        const deleteButton = createDeleteButton(transactionKey);
+        cell.appendChild(deleteButton);
     };
+
+    // Tambahkan tombol Simpan di kolom aksi
+    const actionCell = cell.parentNode.cells[5]; // Mendapatkan cell aksi
+    actionCell.innerHTML = ''; // Kosongkan cell aksi
+    actionCell.appendChild(saveButton);
 }
 
 // Function to create a delete button
@@ -423,6 +423,7 @@ function updateTransaction(key, field, newValue) {
     }
     update(transactionRef, { [field]: newValue });
 }
+
 
 
 
