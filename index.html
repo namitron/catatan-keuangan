@@ -295,8 +295,6 @@
                 });
                 updateTable();
             });
-        };
-// Update transaction table berdasarkan filter waktu (tahun, bulan, minggu)
 const updateTable = () => {
     transactionTable.innerHTML = ''; // Kosongkan tabel sebelum diisi
 
@@ -312,13 +310,16 @@ const updateTable = () => {
         const transactionDate = new Date(transaction.timestamp);
         const transactionYear = transactionDate.getFullYear();
         const transactionMonth = transactionDate.getMonth() + 1;
-        const transactionWeek = Math.ceil((transactionDate.getDate() + 1) / 7);
 
-        // Filter berdasarkan tahun, bulan, dan minggu
+        // Hitung minggu sesuai kalender (ISO week)
+        const startOfYear = new Date(transactionYear, 0, 1);
+        const transactionWeek = Math.ceil((((transactionDate - startOfYear) / 86400000) + startOfYear.getDay() + 1) / 7);
+
+        // Filter berdasarkan tahun, bulan, dan minggu jika ada nilai yang dipilih
         if (
-            transactionYear == selectedYear &&
-            transactionMonth == selectedMonth &&
-            transactionWeek == selectedWeek
+            (!selectedYear || transactionYear == selectedYear) &&
+            (!selectedMonth || transactionMonth == selectedMonth) &&
+            (!selectedWeek || transactionWeek == selectedWeek)
         ) {
             const row = transactionTable.insertRow();
             row.insertCell(0).textContent = transaction.description;
@@ -348,6 +349,10 @@ const updateTable = () => {
     // Perbarui grafik
     updateChart();
 };
+
+// Update transaksi berdasarkan filter waktu saat tombol "Tampilkan Catatan" diklik
+filterButton.addEventListener('click', updateTable);
+
 
 
 
