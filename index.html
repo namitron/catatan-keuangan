@@ -295,64 +295,71 @@
                 });
                 updateTable();
             });
-const updateTable = () => {
-    transactionTable.innerHTML = ''; // Kosongkan tabel sebelum diisi
+        };
 
-    // Ambil nilai filter waktu
-    const selectedYear = document.getElementById('year').value;
-    const selectedMonth = document.getElementById('month').value;
-    const selectedWeek = document.getElementById('week').value;
+        // Update transaction table
+        const updateTable = () => {
+            transactionTable.innerHTML = ''; // Kosongkan tabel sebelum diisi
 
-    let incomeTotal = 0;
-    let expenseTotal = 0;
+            let incomeTotal = 0;
+            let expenseTotal = 0;
 
-    transactions.forEach(transaction => {
-        const transactionDate = new Date(transaction.timestamp);
-        const transactionYear = transactionDate.getFullYear();
-        const transactionMonth = transactionDate.getMonth() + 1;
+            transactions.forEach(transaction => {
+                const row = transactionTable.insertRow();
+                row.insertCell(0).textContent = transaction.description;
+                row.insertCell(1).textContent = `Rp ${transaction.amount.toLocaleString()}`;
+                row.insertCell(2).textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
+                row.insertCell(3).textContent = new Date(transaction.timestamp).toLocaleString();
+                row.insertCell(4).textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
+                const deleteButton = row.insertCell(5).appendChild(document.createElement('button'));
+                deleteButton.textContent = 'Hapus';
+                deleteButton.className = 'delete-button';
+                deleteButton.onclick = () => deleteTransaction(transaction.key);
 
-        // Hitung minggu sesuai kalender (ISO week)
-        const startOfYear = new Date(transactionYear, 0, 1);
-        const transactionWeek = Math.ceil((((transactionDate - startOfYear) / 86400000) + startOfYear.getDay() + 1) / 7);
+                // Hitung total pemasukan dan pengeluaran
+                if (transaction.type === 'income') {
+                    incomeTotal += transaction.amount;
+                } else {
+                    expenseTotal += transaction.amount;
+                }
+            });
 
-        // Filter berdasarkan tahun, bulan, dan minggu jika ada nilai yang dipilih
-        if (
-            (!selectedYear || transactionYear == selectedYear) &&
-            (!selectedMonth || transactionMonth == selectedMonth) &&
-            (!selectedWeek || transactionWeek == selectedWeek)
-        ) {
-            const row = transactionTable.insertRow();
-            row.insertCell(0).textContent = transaction.description;
-            row.insertCell(1).textContent = `Rp ${transaction.amount.toLocaleString()}`;
-            row.insertCell(2).textContent = transaction.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
-            row.insertCell(3).textContent = transactionDate.toLocaleString();
-            row.insertCell(4).textContent = `Rp ${calculateBalance(transaction).toLocaleString()}`;
-            const deleteButton = row.insertCell(5).appendChild(document.createElement('button'));
-            deleteButton.textContent = 'Hapus';
-            deleteButton.className = 'delete-button';
-            deleteButton.onclick = () => deleteTransaction(transaction.key);
+            const balance = incomeTotal - expenseTotal;
+            incomeTotalDisplay.textContent = `Rp ${incomeTotal.toLocaleString()}`;
+            expenseTotalDisplay.textContent = `Rp ${expenseTotal.toLocaleString()}`;
+            balanceDisplay.textContent = `Rp ${balance.toLocaleString()}`;
 
-            // Hitung total pemasukan dan pengeluaran
-            if (transaction.type === 'income') {
-                incomeTotal += transaction.amount;
-            } else {
-                expenseTotal += transaction.amount;
-            }
+            // Perbarui grafik
+            updateChart();
+        };
+
+        // Calculate balance
+        function calculateBalance(transaction) {
+            let balance = 0;
+            transactions.forEach(trans => {
+                if (trans.key <= transaction.key) {
+                    balance += trans.type === 'income' ? trans.amount : -trans.amount;
+                }
+            });
+            return balance;
         }
+
+       // Update chart with filtered transaction data
+function updateChart(transactionsToUpdate) {
+    labels.length = 0;
+    incomeData.length = 0;
+    expenseData.length = 0;
+    balanceData.length = 0;
+
+    transactionsToUpdate.forEach(transaction => {
+        labels.push(new Date(transaction.timestamp).toLocaleString());
+        incomeData.push(transaction.type === 'income' ? transaction.amount : 0);
+        expenseData.push(transaction.type === 'expense' ? transaction.amount : 0);
+        balanceData.push(calculateBalance(transaction));
     });
 
-    const balance = incomeTotal - expenseTotal;
-    incomeTotalDisplay.textContent = `Rp ${incomeTotal.toLocaleString()}`;
-    expenseTotalDisplay.textContent = `Rp ${expenseTotal.toLocaleString()}`;
-    balanceDisplay.textContent = `Rp ${balance.toLocaleString()}`;
-
-    // Perbarui grafik
-    updateChart();
-};
-
-
-
-
+    myChart.update(); // Perbarui grafik
+}
 
 // Filter transactions by selected date
 filterButton.addEventListener('click', () => {
